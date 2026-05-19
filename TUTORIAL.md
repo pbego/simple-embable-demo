@@ -37,8 +37,11 @@ simple-demo/
     │   ├── CommitMessageAgent.java
     │   ├── CommitMessage.java
     │   └── GitChanges.java
-    └── git/
-        └── GitChangesCollector.java   # runs git CLI
+    ├── git/
+    │   └── GitChangesCollector.java   # runs git CLI
+    └── resources/prompts/commit/
+        ├── generate_message.jinja     # LLM prompt (Jinja)
+        └── _conventional_rules.jinja  # shared fragment
 ```
 
 ## Configuration
@@ -85,9 +88,9 @@ Runs:
 
 Diffs are truncated at 12,000 characters each so local models stay within context.
 
-### Step 2: LLM
+### Step 2: LLM (Jinja prompt)
 
-The prompt includes branch, status, both diffs, and any hint from your shell input. The model returns structured `CommitMessage` (`subject`, `body`).
+The prompt is rendered from `src/main/resources/prompts/commit/generate_message.jinja` (Jinjava), then sent to Ollama. Variables: branch, status, diffs, optional hint. See **[TUTORIAL_JINJA.md](TUTORIAL_JINJA.md)** for how templates, `{% if %}`, and `{% include %}` work.
 
 ## Troubleshooting
 

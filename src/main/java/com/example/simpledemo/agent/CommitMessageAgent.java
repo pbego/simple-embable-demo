@@ -6,13 +6,20 @@ import com.embabel.agent.api.annotation.Agent;
 import com.embabel.agent.api.common.Ai;
 import com.embabel.agent.domain.io.UserInput;
 import com.example.simpledemo.git.GitChangesCollector;
+import com.example.simpledemo.template.JinjavaSafe;
+import java.util.Map;
 
 /**
  * Inspects git changes on the current branch (via {@link GitChangesCollector}) and
  * proposes a commit message using the configured local LLM.
+ *
+ * <p>The LLM prompt is rendered from {@code prompts/commit/generate_message.jinja}.
  */
 @Agent(description = "Inspect git changes on the current branch and suggest a commit message")
 public class CommitMessageAgent {
+
+  private static final String COMMIT_MESSAGE_TEMPLATE = "commit/generate_message";
+  private static final String NO_GIT_OUTPUT = "(no output)";
 
   private final GitChangesCollector gitChangesCollector;
 
@@ -28,40 +35,46 @@ public class CommitMessageAgent {
   @AchievesGoal(description = "Propose a commit message for the current changes")
   @Action
   public CommitMessage generateCommitMessage(GitChanges changes, UserInput userInput, Ai ai) {
-    var hint = changes.userHint().isBlank() ? userInput.getContent() : changes.userHint();
-    var hintBlock = hint.isBlank()
-        ? ""
-        : "\nAdditional instructions from the developer:\n%s\n".formatted(hint);
+    var rawHint = changes.userHint().isBlank() ? userInput.getContent() : changes.userHint();
+    var developerHint = rawHint == null ? "" : rawHint.trim();
 
     return ai.withDefaultLlm()
-        .createObject("""
-            You are helping a developer write a git commit message.
+        .rendering(COMMIT_MESSAGE_TEMPLATE)
+        .createObject(
+            CommitMessage.class,
+            Map.of(
+                "branch", changes.branch(),
+                "status", JinjavaSafe.escape(changes.status()),
+                "changeSections", buildChangeSections(changes),
+                "developerSection", buildDeveloperSection(developerHint)));
+  }
 
-            Follow Conventional Commits where reasonable (e.g. feat:, fix:, chore:, docs:).
-            Subject line: imperative mood, max 72 characters, no period at the end.
-            Body: explain what and why, wrapped at ~72 characters per line if needed.
+  private static String buildChangeSections(GitChanges changes) {
+    var sections = new StringBuilder();
+    if (hasDiff(changes.stagedDiff())) {
+      sections.append("## Staged diff (git diff --staged)\n");
+      sections.append(JinjavaSafe.escape(changes.stagedDiff()));
+    } else {
+      sections.append("## Staged diff\n(no staged changes)");
+    }
+    sections.append("\n\n");
+    if (hasDiff(changes.unstagedDiff())) {
+      sections.append("## Unstaged diff (git diff)\n");
+      sections.append(JinjavaSafe.escape(changes.unstagedDiff()));
+    } else {
+      sections.append("## Unstaged diff\n(no unstaged changes)");
+    }
+    return sections.toString();
+  }
 
-            Current branch: %s
+  private static String buildDeveloperSection(String developerHint) {
+    if (developerHint.isBlank()) {
+      return "";
+    }
+    return "## Developer instructions\n" + JinjavaSafe.escape(developerHint) + "\n";
+  }
 
-            git status --short:
-            %s
-
-            Staged diff (git diff --staged):
-            %s
-
-            Unstaged diff (git diff):
-            %s
-            %s
-            If there are no meaningful changes, set subject to "chore: no changes to commit"
-            and body to a short explanation.
-
-            Return JSON with fields: subject (string), body (string, may be empty).
-            """.formatted(
-            changes.branch(),
-            changes.status(),
-            changes.stagedDiff(),
-            changes.unstagedDiff(),
-            hintBlock),
-        CommitMessage.class);
+  private static boolean hasDiff(String diff) {
+    return diff != null && !diff.isBlank() && !NO_GIT_OUTPUT.equals(diff);
   }
 }
