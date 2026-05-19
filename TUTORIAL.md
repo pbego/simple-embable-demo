@@ -1,116 +1,102 @@
-# Embabel + Ollama Simple Demo — Tutorial
+# Embabel + Ollama — Git Commit Message Agent
 
-This project is a minimal [Embabel](https://docs.embabel.com/embabel-agent/guide/0.1.3/) agent that runs entirely on your machine using [Ollama](https://ollama.com/) and the **gemma4:e4b** model. No cloud API keys are required.
+This project is a minimal [Embabel](https://docs.embabel.com/embabel-agent/guide/0.1.3/) agent that runs on your machine with [Ollama](https://ollama.com/) (**gemma4:e4b**). It reads **real git changes** from your repo and suggests a **Conventional Commits**-style message. No cloud API keys required.
 
 ## What we built
 
-- A **Spring Boot** application with two Embabel starters:
-  - `embabel-agent-starter-ollama` — discovers models from your local Ollama server and registers them with Embabel
-  - `embabel-agent-starter-shell` — interactive command-line interface to run agents
-- A **TopicSummarizerAgent** with two typed actions:
-  1. **extractTopic** — turns free-form shell input into a `Topic`
-  2. **summarize** — writes a `Summary` (marked with `@AchievesGoal`)
-
-Embabel’s planner (GOAP) infers the action chain from Java types: `UserInput` → `Topic` → `Summary`. You do not define an explicit workflow graph.
+- **Spring Boot** + Embabel (`embabel-agent-starter-ollama`, `embabel-agent-starter-shell`)
+- **CommitMessageAgent** with two steps:
+  1. **collectChanges** — runs `git` locally (branch, status, staged/unstaged diffs) → `GitChanges` (**no LLM**)
+  2. **generateCommitMessage** — sends diffs to Ollama → `CommitMessage` (`@AchievesGoal`)
 
 ```
-UserInput (shell)  →  extractTopic  →  Topic  →  summarize  →  Summary
+UserInput (shell)  →  collectChanges (git)  →  GitChanges  →  generateCommitMessage (LLM)  →  CommitMessage
 ```
+
+This mixes **code agency** (git) with **LLM agency** (wording the commit), which is a typical Embabel pattern.
 
 ## Prerequisites
 
 | Requirement | Notes |
 |-------------|--------|
 | **Java 21** | Set in `pom.xml` |
-| **Maven** | Use `./mvnw` in this project |
-| **Ollama** | Running locally (default `http://localhost:11434`) |
-| **gemma4:e4b** | Pulled in Ollama |
-
-```bash
-# Install/start Ollama, then pull the model
-ollama pull gemma4:e4b
-ollama list   # confirm gemma4:e4b appears
-```
+| **Maven** | `./mvnw` |
+| **Git** | Repo with changes; run the app from the repo root (or set `simple-demo.git.work-tree`) |
+| **Ollama** | `http://localhost:11434` |
+| **gemma4:e4b** | `ollama pull gemma4:e4b` |
 
 ## Project layout
 
 ```
 simple-demo/
-├── pom.xml                          # Embabel BOM 0.4.0, ollama + shell starters
-├── TUTORIAL.md                      # This file
-└── src/main/
-    ├── java/com/example/simpledemo/
-    │   ├── SimpleDemoApplication.java
-    │   └── agent/
-    │       ├── Topic.java           # Domain type (step 1 output)
-    │       ├── Summary.java         # Domain type (goal output)
-    │       └── TopicSummarizerAgent.java
-    └── resources/
-        └── application.properties   # Ollama URL + default LLM
+├── pom.xml
+├── TUTORIAL.md
+└── src/main/java/com/example/simpledemo/
+    ├── SimpleDemoApplication.java
+    ├── agent/
+    │   ├── CommitMessageAgent.java
+    │   ├── CommitMessage.java
+    │   └── GitChanges.java
+    └── git/
+        └── GitChangesCollector.java   # runs git CLI
 ```
 
-## How the agent works
+## Configuration
 
-### `@Agent`
-
-Marks a Spring-managed class as an Embabel agent. The `description` helps the shell and planner choose this agent for matching intents.
-
-### `@Action`
-
-Each method is a step the planner can run. Parameters are **inputs from the blackboard** (previous step outputs or shell-provided types like `UserInput`).
-
-### `@AchievesGoal`
-
-Marks the action that completes the agent’s objective. When `summarize` finishes, the process is done.
-
-### `Ai` and `withDefaultLlm()`
-
-`Ai` is injected by Embabel. `withDefaultLlm()` uses `embabel.models.default-llm` from configuration (`gemma4:e4b`). `createObject(...)` asks the LLM to return structured JSON mapped to your Java `record`.
-
-## Ollama connection
-
-| Property | Value | Purpose |
-|----------|--------|---------|
-| `spring.ai.ollama.base-url` | `http://localhost:11434` | Ollama HTTP API |
-| `embabel.models.default-llm` | `gemma4:e4b` | Model tag **exactly** as `ollama list` shows |
-
-On startup, Embabel’s `OllamaModelsConfig` calls `GET /api/tags`, registers each model as an `Llm` bean, and wires Spring AI’s `OllamaChatModel`. If Ollama is down, startup may log a warning and fewer models will be available.
+| Property | Default | Purpose |
+|----------|---------|---------|
+| `spring.ai.ollama.base-url` | `http://localhost:11434` | Ollama |
+| `embabel.models.default-llm` | `gemma4:e4b` | Model for commit message generation |
+| `simple-demo.git.work-tree` | `.` | Directory passed to `git -C` (use repo root) |
 
 ## Run and try
+
+From your **git repository** (this project or any repo — set `simple-demo.git.work-tree` if needed):
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-When the shell prompt appears:
+In the shell:
 
 ```text
 agents
-models
-x "summarize the benefits of running LLMs locally with Ollama"
+x "generate a commit message for my current changes"
 ```
 
-Useful shell commands:
+Optional hints in the same command:
 
-| Command | Alias | Description |
-|---------|-------|-------------|
-| `execute "..."` | `x` | Run an agent for the given intent |
-| `agents` | | List registered agents |
-| `models` | | List available LLMs (should include `gemma4:e4b`) |
-| `help` | | All commands |
-| `exit` | `quit` | Leave the shell |
+```text
+x "suggest commit message, focus on the API changes and use fix: prefix"
+```
 
-Optional flags on execute: `-p` log prompts, `-r` log LLM responses.
+Output is JSON with `subject` and `body` you can paste into `git commit`.
+
+## How it works
+
+### Step 1: `GitChangesCollector`
+
+Runs:
+
+- `git branch --show-current`
+- `git status --short`
+- `git diff --staged`
+- `git diff`
+
+Diffs are truncated at 12,000 characters each so local models stay within context.
+
+### Step 2: LLM
+
+The prompt includes branch, status, both diffs, and any hint from your shell input. The model returns structured `CommitMessage` (`subject`, `body`).
 
 ## Troubleshooting
 
-| Problem | What to check |
-|---------|----------------|
-| **Default LLM not found** | Run `ollama list`. Set `embabel.models.default-llm` to the exact tag (including `:e4b`). |
-| **Connection refused to Ollama** | Start Ollama; verify `curl http://localhost:11434/api/tags`. |
-| **Slow or timeout** | Increase `embabel.agent.platform.http-client.read-timeout` (already set to `10m`). |
-| **Empty or invalid JSON from model** | Smaller local models can struggle with structured output; retry or try a larger Ollama model. |
-| **Maven dependency errors** | Ensure `spring-milestones` repo is in `pom.xml` (required for Embabel transitive deps). |
+| Problem | Fix |
+|---------|-----|
+| Empty or wrong diffs | Run from repo root or set `simple-demo.git.work-tree=/path/to/repo` |
+| `git command failed` | Ensure `git` is on `PATH` and the path is a git work tree |
+| Bad commit message | Add hints in `x "..."`; try a larger model in Ollama |
+| Default LLM not found | Match `embabel.models.default-llm` to `ollama list` exactly |
 
 ## Tests
 
@@ -118,10 +104,9 @@ Optional flags on execute: `-p` log prompts, `-r` log LLM responses.
 ./mvnw test
 ```
 
-The included test only loads the Spring context (no live Ollama required in CI).
+Context-load only; no live Ollama or git required in CI.
 
 ## Further reading
 
-- [Embabel Agent User Guide](https://docs.embabel.com/embabel-agent/guide/0.1.3/)
-- [Official Java/Kotlin examples](https://github.com/embabel/embabel-agent-examples)
-- [Embabel Agent repository](https://github.com/embabel/embabel-agent)
+- [Embabel User Guide](https://docs.embabel.com/embabel-agent/guide/0.1.3/)
+- [Embabel examples](https://github.com/embabel/embabel-agent-examples)
