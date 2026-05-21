@@ -1,102 +1,98 @@
-# Embabel + Ollama — Git Commit Message Agent
+# Embabel simple-demo tutorial
 
-This project is a minimal [Embabel](https://docs.embabel.com/embabel-agent/guide/0.1.3/) agent that runs on your machine with [Ollama](https://ollama.com/) (**gemma4:e4b**). It reads **real git changes** from your repo and suggests a **Conventional Commits**-style message. No cloud API keys required.
+Local [Embabel](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/) + [Ollama](https://ollama.com/). No gRPC, no cloud API keys.
 
-## What we built
+## What this project shows
 
-- **Spring Boot** + Embabel (`embabel-agent-starter-ollama`, `embabel-agent-starter-shell`)
-- **CommitMessageAgent** with two steps:
-  1. **collectChanges** — runs `git` locally (branch, status, staged/unstaged diffs) → `GitChanges` (**no LLM**)
-  2. **generateCommitMessage** — sends diffs to Ollama → `CommitMessage` (`@AchievesGoal`)
+### 1. Agent orchestrator — shell `x`
+
+Embabel **Autonomy** selects the best `@Agent` for your text. The **planner** then runs the agent’s `@Action` chain.
+
+Example: **CommitMessageAgent** (two steps, no manual workflow XML):
 
 ```
-UserInput (shell)  →  collectChanges (git)  →  GitChanges  →  generateCommitMessage (LLM)  →  CommitMessage
+UserInput  →  collectChanges (git CLI)  →  GitChanges  →  generateCommitMessage (LLM)  →  CommitMessage
 ```
 
-This mixes **code agency** (git) with **LLM agency** (wording the commit), which is a typical Embabel pattern.
+Also try:
+
+- `x "hello"` → **GreetingAgent** (no LLM)
+- `x "tell me a joke"` → **JokeAgent** (one LLM step)
+
+### 2. Chat + router — shell `chat`
+
+**Chat** keeps conversation memory across turns. Each message triggers **ChatRouter** (`@EmbabelComponent`, `@Action(trigger = UserMessage.class)`), which calls a specialist in plain Java (same idea as IAX `Router` → Support / Insights / RCA).
+
+| You type in `chat` | Routed to |
+|--------------------|-----------|
+| hello, general text | GreetingAgent |
+| joke, funny | JokeAgent (LLM) |
+| commit, git | CommitMessageAgent: `git` → LLM (same as `x`, invoked directly from `ChatRouter`) |
+
+Configure via `DemoChatConfiguration`: `AgentProcessChatbot.utilityFromPlatform(...)`.
+
+### 3. How this maps to iax-app-ai
+
+| Embabel shell / concept | iax-app-ai Embabel daemon |
+|-------------------------|---------------------------|
+| `chat` | gRPC `chat` / `chatEx` + `Chatbot` + `ChatSession` |
+| `x` | Each turn still runs agents; default `AgentType.SRE` uses LLM routing |
+| `ChatRouter` | `Router.respond` |
+| `@Agent` workers | `Support`, `Insights`, `Rca`, … |
+| `x` multi-step | RCA workflows, `CommitMessageAgent`-style chains |
 
 ## Prerequisites
 
 | Requirement | Notes |
 |-------------|--------|
-| **Java 21** | Set in `pom.xml` |
-| **Maven** | `./mvnw` |
-| **Git** | Repo with changes; run the app from the repo root (or set `simple-demo.git.work-tree`) |
-| **Ollama** | `http://localhost:11434` |
-| **gemma4:e4b** | `ollama pull gemma4:e4b` |
-
-## Project layout
-
-```
-simple-demo/
-├── pom.xml
-├── TUTORIAL.md
-└── src/main/java/com/example/simpledemo/
-    ├── SimpleDemoApplication.java
-    ├── agent/
-    │   ├── CommitMessageAgent.java
-    │   ├── CommitMessage.java
-    │   └── GitChanges.java
-    └── git/
-        └── GitChangesCollector.java   # runs git CLI
-```
+| Java 21 | `pom.xml` |
+| Maven | `./mvnw` |
+| Ollama | `http://localhost:11434`, model `gemma4:e4b` |
+| Git | Only for commit `x` examples |
 
 ## Configuration
 
 | Property | Default | Purpose |
 |----------|---------|---------|
 | `spring.ai.ollama.base-url` | `http://localhost:11434` | Ollama |
-| `embabel.models.default-llm` | `gemma4:e4b` | Model for commit message generation |
-| `simple-demo.git.work-tree` | `.` | Directory passed to `git -C` (use repo root) |
+| `embabel.models.default-llm` | `gemma4:e4b` | Default model |
+| `simple-demo.git.work-tree` | `.` | Repo for `git -C` |
 
-## Run and try
-
-From your **git repository** (this project or any repo — set `simple-demo.git.work-tree` if needed):
+## Try it
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-In the shell:
-
 ```text
-agents
-x "generate a commit message for my current changes"
+shell:> agents
+
+# Orchestrator
+shell:> x "generate a commit message for my current changes"
+shell:> x "tell me a joke about spring"
+
+# Chat + router
+shell:> chat
+chat:> hello
+chat:> tell me a joke
+chat:> exit
 ```
 
-Optional hints in the same command:
+## Commit message agent (detail)
 
-```text
-x "suggest commit message, focus on the API changes and use fix: prefix"
-```
+**GitChangesCollector** runs `git branch`, `git status --short`, `git diff --staged`, `git diff` (truncated at 12k chars each).
 
-Output is JSON with `subject` and `body` you can paste into `git commit`.
+The LLM returns JSON `CommitMessage` (`subject`, `body`) using Conventional Commits guidance.
 
-## How it works
-
-### Step 1: `GitChangesCollector`
-
-Runs:
-
-- `git branch --show-current`
-- `git status --short`
-- `git diff --staged`
-- `git diff`
-
-Diffs are truncated at 12,000 characters each so local models stay within context.
-
-### Step 2: LLM
-
-The prompt includes branch, status, both diffs, and any hint from your shell input. The model returns structured `CommitMessage` (`subject`, `body`).
+Run from a git work tree or set `simple-demo.git.work-tree=/path/to/repo`.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| Empty or wrong diffs | Run from repo root or set `simple-demo.git.work-tree=/path/to/repo` |
-| `git command failed` | Ensure `git` is on `PATH` and the path is a git work tree |
-| Bad commit message | Add hints in `x "..."`; try a larger model in Ollama |
-| Default LLM not found | Match `embabel.models.default-llm` to `ollama list` exactly |
+| Model not found | `ollama list` — tag must match `embabel.models.default-llm` |
+| Empty git diffs | Run from repo root or set `simple-demo.git.work-tree` |
+| Chat always greets | Include "joke" or "commit"/"git" to route elsewhere |
 
 ## Tests
 
@@ -104,9 +100,9 @@ The prompt includes branch, status, both diffs, and any hint from your shell inp
 ./mvnw test
 ```
 
-Context-load only; no live Ollama or git required in CI.
+Includes `ChatRouterTest` (routing keywords only).
 
 ## Further reading
 
-- [Embabel User Guide](https://docs.embabel.com/embabel-agent/guide/0.1.3/)
-- [Embabel examples](https://github.com/embabel/embabel-agent-examples)
+- [Embabel User Guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)
+- [iax-app-ai docs/embabel-flow.md](https://github.com/ITRS-Group/iax-app-ai/blob/dev/docs/embabel-flow.md) (production routing)
