@@ -18,7 +18,7 @@ class FileConversationStoreTest {
 
   @Test
   void saveLoadAndListSurvivesNewStoreInstance() {
-    var properties = new ConversationMemoryProperties(tempDir.toString(), 20);
+    var properties = new ConversationMemoryProperties(tempDir.toString(), 20, true);
     var store1 = new FileConversationStore(properties);
     var conversation = new InMemoryConversation(java.util.List.of(), "test-conv", true);
     conversation.addMessage(new UserMessage("Hello"));
@@ -42,14 +42,33 @@ class FileConversationStoreTest {
 
   @Test
   void loadReturnsEmptyWhenMissing() {
-    var store = new FileConversationStore(new ConversationMemoryProperties(tempDir.toString(), 20));
+    var store = new FileConversationStore(new ConversationMemoryProperties(tempDir.toString(), 20, true));
     assertFalse(store.load("missing").isPresent());
   }
 
   @Test
   void listIsEmptyForMissingDirectory() {
     var missing = tempDir.resolve("no-such-dir");
-    var store = new FileConversationStore(new ConversationMemoryProperties(missing.toString(), 20));
+    var store = new FileConversationStore(new ConversationMemoryProperties(missing.toString(), 20, true));
     assertTrue(store.list().isEmpty());
+  }
+
+  @Test
+  void saveLoadRoundTripsSessionSummary() {
+    var properties = new ConversationMemoryProperties(tempDir.toString(), 20, true);
+    var store = new FileConversationStore(properties);
+    var conversation = new InMemoryConversation(java.util.List.of(), "sum-conv", true);
+    var persisting =
+        new PersistingConversation(
+            conversation,
+            store,
+            new ConversationMemoryState("Discussed conventional commits.", 3));
+
+    persisting.addMessage(new UserMessage("follow up"));
+
+    var loaded = store.load("sum-conv").orElseThrow();
+    assertEquals("Discussed conventional commits.", loaded.memoryState().sessionSummary());
+    assertEquals(3, loaded.memoryState().summarizedThroughIndex());
+    assertEquals(1, loaded.getMessages().size());
   }
 }

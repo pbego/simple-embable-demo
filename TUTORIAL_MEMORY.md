@@ -32,7 +32,17 @@ History **survives** shell `exit` and app restarts. It is **not** shared across 
 
 `CommitChatAgent` calls `conversation.last(n)` before `createObject(...)`. That returns a short-lived view of the tail of the thread; replies are still appended to the **full** conversation and persisted. Older messages remain on disk but drop out of the model’s context once the thread is longer than N turns.
 
-This is an application-level **message-count** cap. It is related to, but not the same as, a model’s **token** context window (e.g. 128k): if those N messages are very long, the provider can still reject or truncate the request. Raise N in `application.properties` if you need more recent turns in context, or use summarization/RAG for much older content.
+This is an application-level **message-count** cap. It is related to, but not the same as, a model’s **token** context window (e.g. 128k): if those N messages are very long, the provider can still reject or truncate the request. Raise N in `application.properties` if you need more recent turns in context.
+
+## Session summarization
+
+When `simple-demo.memory-summarization-enabled=true` (default) and the transcript is longer than the recent window, **older turns are compressed** before each reply:
+
+1. Messages that fell out of the last-N window are sent to the LLM in a dedicated summarization call.
+2. The result is stored in the conversation JSON as `sessionSummary`, with `summarizedThroughIndex` tracking how far summarization has progressed (incremental updates on later turns).
+3. The main chat prompt becomes: **base system prompt** + **summary system block** + **last N verbatim messages**.
+
+Full `messages[]` on disk is unchanged (audit and `resume-chat`). Disable summarization with `simple-demo.memory-summarization-enabled=false` to use windowing only.
 
 ## Quick start (two days)
 
@@ -60,7 +70,7 @@ You: Make the subject shorter
 You: exit
 ```
 
-The model sees the last N messages from that file (see [Message windowing](#message-windowing)).
+The model sees a session summary (if any) plus the last N messages from that file (see [Message windowing](#message-windowing) and [Session summarization](#session-summarization)).
 
 ## Shell commands
 
@@ -93,13 +103,15 @@ The model sees the last N messages from that file (see [Message windowing](#mess
 
 ```properties
 simple-demo.conversations-dir=${user.home}/.simple-demo/conversations
-simple-demo.memory-max-messages=20
+simple-demo.memory-max-messages=2
+simple-demo.memory-summarization-enabled=true
 ```
 
 | Property | Default | Role |
 |----------|---------|------|
 | `simple-demo.conversations-dir` | `~/.simple-demo/conversations` | Where JSON files are written |
-| `simple-demo.memory-max-messages` | `20` | How many recent messages `CommitChatAgent` sends to the LLM per turn (full history still saved on disk) |
+| `simple-demo.memory-max-messages` | `20` | Recent verbatim messages sent to the LLM per turn |
+| `simple-demo.memory-summarization-enabled` | `true` | Summarize older turns into `sessionSummary` when the window is exceeded |
 
 ## How it works internally
 
@@ -117,12 +129,12 @@ flowchart LR
   Factory --> Store
   Store --> Disk
   Chatbot --> Agent
-  Agent -->|"SystemMessage + conversation.last(N)"| LLM[Ollama]
+  Agent -->|"summary + last N messages"| LLM[Ollama]
 ```
 
 1. **`FileConversationFactory`** — `load(id)` reads JSON; `create(id)` wraps an in-memory conversation.
 2. **`PersistingConversation`** — saves to disk after every `addMessage`.
-3. **`CommitChatAgent`** — inline system prompt (no Jinja); sends `SystemMessage` + `conversation.last(memoryMaxMessages)` to the LLM.
+3. **`CommitChatAgent`** — may refresh `sessionSummary` via `SessionSummaryService`, then sends base system prompt, optional summary block, and `conversation.last(memoryMaxMessages)` to the LLM.
 4. **`ChatConfiguration`** — registers `AgentProcessChatbot` wired to the **Commit chat** agent only.
 5. **`AgentProcessChatSession`** — adds user messages to the conversation and runs the agent; assistant replies are appended and persisted.
 
@@ -136,8 +148,56 @@ flowchart LR
 | Spring AI | simple-demo |
 |-----------|-------------|
 | `InMemoryChatMemoryRepository` | JSON files under `~/.simple-demo/conversations` |
-| `MessageWindowChatMemory` | Full history on disk; LLM prompt uses last N messages (`memory-max-messages`) |
+| `MessageWindowChatMemory` | Full history on disk; LLM prompt uses session summary + last N messages |
 | `conversationId` | Conversation id + `resume-chat` |
+
+## Testing summarization
+
+### Automated (no Ollama)
+
+Unit tests cover the pipeline without a live LLM:
+
+| Test | What it verifies |
+|------|------------------|
+| `ConversationSummarizationPlannerTest` | Which messages are selected when the window is exceeded |
+| `ChatPromptBuilderTest` | Summary system block + recent messages in the prompt |
+| `SessionSummaryServiceTest` | Summarization call via Embabel `FakeOperationContext`, state persisted to JSON |
+| `FileConversationStoreTest` | `sessionSummary` / `summarizedThroughIndex` round-trip on disk |
+
+Run:
+
+```bash
+./mvnw test
+```
+
+`SessionSummaryServiceTest` uses `FakeOperationContext.expectResponse(...)` so the summarizer returns a fixed string and assertions stay deterministic.
+
+### Manual (with Ollama)
+
+Use a **small window** so compaction happens quickly:
+
+```properties
+simple-demo.memory-max-messages=2
+simple-demo.memory-summarization-enabled=true
+```
+
+1. Start the app and run `chat`.
+2. Send **more than four** back-and-forth messages (e.g. ask about staged files, commit style, then refine the subject twice).
+3. Exit and inspect the conversation file:
+
+```bash
+cat ~/.simple-demo/conversations/<id>.json
+```
+
+You should see:
+
+- `messages` — full transcript (all turns).
+- `sessionSummary` — non-empty prose after the thread exceeds the window.
+- `summarizedThroughIndex` — index of the last message folded into the summary.
+
+4. `resume-chat <id>` and ask something that depends on an **early** topic (e.g. “what did we decide about the commit prefix?”). The model should still answer from the summary block even though early verbatim turns are no longer in the last-N window.
+
+To compare window-only behavior, set `simple-demo.memory-summarization-enabled=false` and repeat; old topics should be harder to recover once they fall outside the last N messages.
 
 ## Troubleshooting
 

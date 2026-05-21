@@ -45,7 +45,8 @@ public class FileConversationStore {
   public void save(Conversation conversation) {
     try {
       Files.createDirectories(conversationsDir);
-      var record = toRecord(conversation);
+      var memoryState = memoryState(conversation);
+      var record = toRecord(conversation, memoryState);
       var file = fileForId(conversation.getId());
       objectMapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), record);
     } catch (IOException e) {
@@ -53,7 +54,7 @@ public class FileConversationStore {
     }
   }
 
-  public Optional<Conversation> load(String id) {
+  public Optional<PersistingConversation> load(String id) {
     var file = fileForId(id);
     if (!Files.isRegularFile(file)) {
       return Optional.empty();
@@ -64,6 +65,13 @@ public class FileConversationStore {
     } catch (IOException e) {
       throw new IllegalStateException("Failed to load conversation " + id, e);
     }
+  }
+
+  private static ConversationMemoryState memoryState(Conversation conversation) {
+    if (conversation instanceof ConversationMemoryAccessor accessor) {
+      return accessor.memoryState();
+    }
+    return ConversationMemoryState.empty();
   }
 
   public List<ConversationSummary> list() {
@@ -109,7 +117,7 @@ public class FileConversationStore {
     return singleLine.substring(0, 57) + "...";
   }
 
-  private ConversationRecord toRecord(Conversation conversation) {
+  private ConversationRecord toRecord(Conversation conversation, ConversationMemoryState memory) {
     var messages =
         conversation.getMessages().stream().map(FileConversationStore::toStored).toList();
     var title =
@@ -123,19 +131,31 @@ public class FileConversationStore {
         messages.isEmpty()
             ? Instant.now()
             : messages.getLast().timestamp();
-    return new ConversationRecord(conversation.getId(), title, updatedAt, messages);
+    return new ConversationRecord(
+        conversation.getId(),
+        title,
+        updatedAt,
+        messages,
+        memory.sessionSummary(),
+        memory.summarizedThroughIndex());
   }
 
   private static StoredMessageRecord toStored(Message message) {
     return new StoredMessageRecord(message.getRole().name(), message.getContent(), message.getTimestamp());
   }
 
-  private static Conversation fromRecord(ConversationRecord record) {
+  private PersistingConversation fromRecord(ConversationRecord record) {
     var messages = new ArrayList<Message>();
     for (var stored : record.messages()) {
       messages.add(fromStored(stored));
     }
-    return new InMemoryConversation(messages, record.id(), true);
+    var conversation = new InMemoryConversation(messages, record.id(), true);
+    var summarizedThrough = record.summarizedThroughIndex();
+    if (record.sessionSummary() == null && summarizedThrough <= 0) {
+      summarizedThrough = ConversationMemoryState.NONE_SUMMARIZED;
+    }
+    var memory = new ConversationMemoryState(record.sessionSummary(), summarizedThrough);
+    return new PersistingConversation(conversation, this, memory);
   }
 
   private static Message fromStored(StoredMessageRecord stored) {

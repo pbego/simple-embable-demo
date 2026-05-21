@@ -28,7 +28,6 @@ public class FileConversationFactory implements ConversationFactory {
   public Conversation create(String id) {
     return store
         .load(id)
-        .map(conversation -> new PersistingConversation(conversation, store))
         .orElseGet(
             () ->
                 new PersistingConversation(
@@ -37,10 +36,7 @@ public class FileConversationFactory implements ConversationFactory {
 
   @Override
   public Conversation load(String id) {
-    return store
-        .load(id)
-        .map(conversation -> new PersistingConversation(conversation, store))
-        .orElse(null);
+    return store.load(id).orElse(null);
   }
 
   /** Create a new conversation with a generated id. */

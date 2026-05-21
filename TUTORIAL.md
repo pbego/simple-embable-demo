@@ -61,7 +61,8 @@ simple-demo/
 | `embabel.models.default-llm` | `gemma4:e4b` | Model for commit message generation |
 | `simple-demo.git.work-tree` | `.` | Directory passed to `git -C` (use repo root) |
 | `simple-demo.conversations-dir` | `~/.simple-demo/conversations` | Saved chat JSON files |
-| `simple-demo.memory-max-messages` | `20` | Memory window size (see [TUTORIAL_MEMORY.md](TUTORIAL_MEMORY.md)) |
+| `simple-demo.memory-max-messages` | `20` | Recent messages in LLM context (see [TUTORIAL_MEMORY.md](TUTORIAL_MEMORY.md)) |
+| `simple-demo.memory-summarization-enabled` | `true` | Summarize older turns when window exceeded |
 
 ## Run and try
 

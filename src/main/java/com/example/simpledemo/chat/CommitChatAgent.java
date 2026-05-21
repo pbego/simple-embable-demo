@@ -6,13 +6,11 @@ import com.embabel.agent.api.common.ActionContext;
 import com.embabel.agent.api.common.PlannerType;
 import com.embabel.chat.AssistantMessage;
 import com.embabel.chat.Conversation;
-import com.embabel.chat.Message;
-import com.embabel.chat.SystemMessage;
 import com.embabel.chat.UserMessage;
 import com.embabel.chat.agent.ConversationContinues;
+import com.example.simpledemo.memory.ConversationMemoryAccessor;
 import com.example.simpledemo.memory.ConversationMemoryProperties;
-import java.util.ArrayList;
-import java.util.List;
+import com.example.simpledemo.memory.ConversationMemoryState;
 
 /**
  * Minimal chat agent for the history/memory demo. Uses an inline system prompt (no Jinja).
@@ -33,22 +31,38 @@ public class CommitChatAgent {
           .strip();
 
   private final ConversationMemoryProperties memoryProperties;
+  private final SessionSummaryService sessionSummaryService;
+  private final ChatPromptBuilder chatPromptBuilder;
 
-  public CommitChatAgent(ConversationMemoryProperties memoryProperties) {
+  public CommitChatAgent(
+      ConversationMemoryProperties memoryProperties,
+      SessionSummaryService sessionSummaryService,
+      ChatPromptBuilder chatPromptBuilder) {
     this.memoryProperties = memoryProperties;
+    this.sessionSummaryService = sessionSummaryService;
+    this.chatPromptBuilder = chatPromptBuilder;
   }
 
   @Action(canRerun = true, trigger = UserMessage.class, description = "Reply using conversation history")
   public ConversationContinues respond(Conversation conversation, ActionContext context) {
-    var windowed = conversation.last(memoryProperties.memoryMaxMessages());
-    var messages = new ArrayList<Message>();
-    messages.add(new SystemMessage(SYSTEM_PROMPT));
-    messages.addAll(windowed.getMessages());
+    sessionSummaryService.refreshSummaryIfNeeded(conversation, context);
+
+    var memory = memoryState(conversation);
+    var messages =
+        chatPromptBuilder.build(
+            SYSTEM_PROMPT, conversation, memory, memoryProperties.memoryMaxMessages());
 
     var reply = context.ai().withDefaultLlm().createObject(messages, String.class);
     var assistantMessage = new AssistantMessage(reply);
     conversation.addMessage(assistantMessage);
     context.sendMessage(assistantMessage);
     return ConversationContinues.with(assistantMessage);
+  }
+
+  private static ConversationMemoryState memoryState(Conversation conversation) {
+    if (conversation instanceof ConversationMemoryAccessor accessor) {
+      return accessor.memoryState();
+    }
+    return ConversationMemoryState.empty();
   }
 }

@@ -1,30 +1,48 @@
 package com.example.simpledemo.memory;
 
+import com.embabel.agent.api.identity.User;
 import com.embabel.chat.Asset;
 import com.embabel.chat.AssetTracker;
 import com.embabel.chat.Conversation;
 import com.embabel.chat.ConversationFormatter;
 import com.embabel.chat.Message;
 import com.embabel.chat.UserMessage;
-import com.embabel.agent.api.identity.User;
 import com.embabel.common.ai.prompt.PromptContributor;
 import java.util.List;
 
 /**
  * {@link Conversation} decorator that persists to disk after each {@link #addMessage(Message)}.
  */
-public class PersistingConversation implements Conversation {
+public class PersistingConversation implements Conversation, ConversationMemoryAccessor {
 
   private final Conversation delegate;
   private final FileConversationStore store;
+  private ConversationMemoryState memoryState;
 
   public PersistingConversation(Conversation delegate, FileConversationStore store) {
+    this(delegate, store, ConversationMemoryState.empty());
+  }
+
+  public PersistingConversation(
+      Conversation delegate, FileConversationStore store, ConversationMemoryState memoryState) {
     this.delegate = delegate;
     this.store = store;
+    this.memoryState = memoryState != null ? memoryState : ConversationMemoryState.empty();
   }
 
   Conversation delegate() {
     return delegate;
+  }
+
+  @Override
+  public ConversationMemoryState memoryState() {
+    return memoryState;
+  }
+
+  @Override
+  public void updateMemoryState(ConversationMemoryState state) {
+    this.memoryState = state != null ? state : ConversationMemoryState.empty();
+    store.save(this);
   }
 
   @Override
@@ -75,7 +93,7 @@ public class PersistingConversation implements Conversation {
 
   @Override
   public Conversation last(int n) {
-    return new PersistingConversation(delegate.last(n), store);
+    return new PersistingConversation(delegate.last(n), store, memoryState);
   }
 
   @Override
