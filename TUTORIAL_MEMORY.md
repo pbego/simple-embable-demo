@@ -182,8 +182,22 @@ simple-demo.memory-summarization-enabled=true
 ```
 
 1. Start the app and run `chat`.
-2. Send **more than four** back-and-forth messages (e.g. ask about staged files, commit style, then refine the subject twice).
-3. Exit and inspect the conversation file:
+2. Send **a few exchanges** (with `memory-max-messages=2`, summarization starts once there are more than two messages in the thread).
+3. Exit and inspect the conversation file (replace `<id>` with the session id from `conversations`, e.g. `loving_shockley`):
+
+```bash
+cat ~/.simple-demo/conversations/<id>.json | jq '.sessionSummary, .summarizedThroughIndex, (.messages | length)'
+```
+
+Requires [jq](https://jqlang.org/). Example output when summarization has run:
+
+```text
+"The discussion's focus remains on ..."
+6
+10
+```
+
+Meaning: non-empty summary, last summarized message index, and total messages on disk. To view the full JSON:
 
 ```bash
 cat ~/.simple-demo/conversations/<id>.json
