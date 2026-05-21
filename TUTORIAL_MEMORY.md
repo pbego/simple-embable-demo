@@ -23,6 +23,17 @@ Override with `simple-demo.conversations-dir` in `application.properties`.
 
 History **survives** shell `exit` and app restarts. It is **not** shared across machines unless you copy that directory.
 
+## Message windowing
+
+**Chat history** (on disk) and **LLM context** (what the model sees on each turn) are not the same:
+
+- **Saved:** every user and assistant message is written to the JSON file.
+- **Sent to the LLM:** only the last **N** messages from that file, plus a system prompt (default **N = 20** via `simple-demo.memory-max-messages`).
+
+`CommitChatAgent` calls `conversation.last(n)` before `createObject(...)`. That returns a short-lived view of the tail of the thread; replies are still appended to the **full** conversation and persisted. Older messages remain on disk but drop out of the model’s context once the thread is longer than N turns.
+
+This is an application-level **message-count** cap. It is related to, but not the same as, a model’s **token** context window (e.g. 128k): if those N messages are very long, the provider can still reject or truncate the request. Raise N in `application.properties` if you need more recent turns in context, or use summarization/RAG for much older content.
+
 ## Quick start (two days)
 
 **Day 1 — new chat**
@@ -49,7 +60,7 @@ You: Make the subject shorter
 You: exit
 ```
 
-The model sees earlier user/assistant messages from the file.
+The model sees the last N messages from that file (see [Message windowing](#message-windowing)).
 
 ## Shell commands
 
@@ -88,7 +99,7 @@ simple-demo.memory-max-messages=20
 | Property | Default | Role |
 |----------|---------|------|
 | `simple-demo.conversations-dir` | `~/.simple-demo/conversations` | Where JSON files are written |
-| `simple-demo.memory-max-messages` | `20` | Reserved for future windowing; chat agent uses full saved history via Embabel |
+| `simple-demo.memory-max-messages` | `20` | How many recent messages `CommitChatAgent` sends to the LLM per turn (full history still saved on disk) |
 
 ## How it works internally
 
@@ -106,12 +117,12 @@ flowchart LR
   Factory --> Store
   Store --> Disk
   Chatbot --> Agent
-  Agent -->|"respondWithSystemPrompt(conversation)"| LLM[Ollama]
+  Agent -->|"SystemMessage + conversation.last(N)"| LLM[Ollama]
 ```
 
 1. **`FileConversationFactory`** — `load(id)` reads JSON; `create(id)` wraps an in-memory conversation.
 2. **`PersistingConversation`** — saves to disk after every `addMessage`.
-3. **`CommitChatAgent`** — inline system prompt (no Jinja); sends `SystemMessage` + `conversation.messages` to the LLM.
+3. **`CommitChatAgent`** — inline system prompt (no Jinja); sends `SystemMessage` + `conversation.last(memoryMaxMessages)` to the LLM.
 4. **`ChatConfiguration`** — registers `AgentProcessChatbot` wired to the **Commit chat** agent only.
 5. **`AgentProcessChatSession`** — adds user messages to the conversation and runs the agent; assistant replies are appended and persisted.
 
@@ -125,7 +136,7 @@ flowchart LR
 | Spring AI | simple-demo |
 |-----------|-------------|
 | `InMemoryChatMemoryRepository` | JSON files under `~/.simple-demo/conversations` |
-| `MessageWindowChatMemory` | Full history on disk; LLM prompt uses conversation messages |
+| `MessageWindowChatMemory` | Full history on disk; LLM prompt uses last N messages (`memory-max-messages`) |
 | `conversationId` | Conversation id + `resume-chat` |
 
 ## Troubleshooting
