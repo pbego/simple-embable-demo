@@ -31,7 +31,10 @@ public class CommitMessageAgent {
     var hint = changes.userHint().isBlank() ? userInput.getContent() : changes.userHint();
     var hintBlock = hint.isBlank()
         ? ""
-        : "\nAdditional instructions from the developer:\n%s\n".formatted(hint);
+        : """
+            Developer instructions (MUST follow — override default wording inferred from diffs):
+            %s
+            """.formatted(hint);
 
     return ai.withDefaultLlm()
         .createObject("""
@@ -40,7 +43,9 @@ public class CommitMessageAgent {
             Follow Conventional Commits where reasonable (e.g. feat:, fix:, chore:, docs:).
             Subject line: imperative mood, max 72 characters, no period at the end.
             Body: explain what and why, wrapped at ~72 characters per line if needed.
+            If developer instructions specify a subject prefix or format (e.g. "DOC-2:"), use it exactly.
 
+            %s
             Current branch: %s
 
             git status --short:
@@ -51,17 +56,17 @@ public class CommitMessageAgent {
 
             Unstaged diff (git diff):
             %s
-            %s
+
             If there are no meaningful changes, set subject to "chore: no changes to commit"
             and body to a short explanation.
 
             Return JSON with fields: subject (string), body (string, may be empty).
             """.formatted(
+            hintBlock,
             changes.branch(),
             changes.status(),
             changes.stagedDiff(),
-            changes.unstagedDiff(),
-            hintBlock),
+            changes.unstagedDiff()),
         CommitMessage.class);
   }
 }
