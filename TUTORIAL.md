@@ -21,13 +21,19 @@ Also try:
 
 ### 2. Chat + router — shell `chat`
 
-**Chat** keeps conversation memory across turns. Each message triggers **ChatRouter** (`@EmbabelComponent`, `@Action(trigger = UserMessage.class)`), which calls a specialist in plain Java (same idea as IAX `Router` → Support / Insights / RCA).
+**Chat** keeps conversation memory. Each message hits **ChatRouter**, which picks a worker in one of two ways:
 
-| You type in `chat` | Routed to |
-|--------------------|-----------|
-| hello, general text | GreetingAgent |
-| joke, funny | JokeAgent (LLM) |
-| commit, git | CommitMessageAgent: `git` → LLM (same as `x`, invoked directly from `ChatRouter`) |
+1. **You prefix the agent** (skip routing LLM): `@greet`, `@joke`, `@commit` (aliases: `@git`, `@funny`, …)
+2. **Natural language** — a small routing LLM reads the message and chooses greet / joke / commit (same pattern as IAX `Router` + `Subagent` tools)
+
+| Example in `chat` | How it routes |
+|-------------------|---------------|
+| `@commit focus on API` | CommitMessageAgent (explicit) |
+| `@joke about java` | JokeAgent (explicit) |
+| `write a commit message for my changes` | Routing LLM → CommitMessageAgent |
+| `tell me something funny` | Routing LLM → JokeAgent |
+
+Commit work always runs `git` then the LLM (`CommitMessageAgent.answer`).
 
 Configure via `DemoChatConfiguration`: `AgentProcessChatbot.utilityFromPlatform(...)`.
 
@@ -75,6 +81,7 @@ shell:> x "tell me a joke about spring"
 shell:> chat
 chat:> hello
 chat:> tell me a joke
+chat:> @commit message for my staged changes
 chat:> exit
 ```
 
@@ -92,7 +99,7 @@ Run from a git work tree or set `simple-demo.git.work-tree=/path/to/repo`.
 |---------|-----|
 | Model not found | `ollama list` — tag must match `embabel.models.default-llm` |
 | Empty git diffs | Run from repo root or set `simple-demo.git.work-tree` |
-| Chat always greets | Include "joke" or "commit"/"git" to route elsewhere |
+| Wrong agent in chat | Use `@commit` / `@joke` / `@greet`, or rephrase for the routing LLM |
 
 ## Tests
 

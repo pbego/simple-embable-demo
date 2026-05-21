@@ -3,6 +3,7 @@ package com.example.simpledemo.agent;
 import com.embabel.agent.api.annotation.AchievesGoal;
 import com.embabel.agent.api.annotation.Action;
 import com.embabel.agent.api.annotation.Agent;
+import com.embabel.agent.api.common.ActionContext;
 import com.embabel.agent.api.common.Ai;
 import com.embabel.agent.domain.io.UserInput;
 import com.example.simpledemo.git.GitChangesCollector;
@@ -14,10 +15,24 @@ import com.example.simpledemo.git.GitChangesCollector;
 @Agent(description = "Inspect git changes on the current branch and suggest a commit message")
 public class CommitMessageAgent {
 
+  public record Request(String question) {}
+
   private final GitChangesCollector gitChangesCollector;
 
   public CommitMessageAgent(GitChangesCollector gitChangesCollector) {
     this.gitChangesCollector = gitChangesCollector;
+  }
+
+  /**
+   * Single-shot entry for chat routing and {@code Subagent} tools. The {@code x} command can still
+   * use the two-step planner path ({@link #collectChanges} → {@link #generateCommitMessage}).
+   */
+  @Action(canRerun = true, description = "Suggest a commit message from current git changes")
+  public CommitMessage answer(Request request, ActionContext context) {
+    var userInput =
+        new UserInput(request != null && request.question() != null ? request.question() : "");
+    var changes = collectChanges(userInput);
+    return generateCommitMessage(changes, userInput, context.ai());
   }
 
   @Action

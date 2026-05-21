@@ -40,12 +40,18 @@ x "hello"
 ```text
 chat
 chat:> hello
-chat:> tell me a joke
-chat:> commit message for my changes
+chat:> tell me a joke about spring
+chat:> @commit focus on the router changes
+chat:> @joke kubernetes
 chat:> exit
 ```
 
-`ChatRouter` dispatches by keywords (see `ChatRouter.fromMessage`). Commit routes call `collectChanges` then `generateCommitMessage` directly (same logic as the `x` planner path).
+`ChatRouter` routes each turn in one of two ways:
+
+- **Explicit agent prefix** — `@commit …`, `@joke …`, `@greet …` (you pick; no routing LLM)
+- **Natural language** — routing LLM picks one or more agents (commit + joke in one message → both run)
+
+Commit work runs `git` then the LLM via `CommitMessageAgent.answer(...)`.
 
 ## Layout
 

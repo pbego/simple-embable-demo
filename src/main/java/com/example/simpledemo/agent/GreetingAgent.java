@@ -17,7 +17,9 @@ public class GreetingAgent {
   public String greet(Request request) {
     var message = request != null && request.message() != null ? request.message() : "";
     if (message.isBlank()) {
-      return "Hello! Ask me for a joke, or use the chat command for a routed conversation.";
+      return """
+          Hello! Prefix a message with @greet, @joke, or @commit — or ask naturally and the router LLM picks an agent.
+          """;
     }
     return "Hello! You said: \"%s\"".formatted(message.trim());
   }
