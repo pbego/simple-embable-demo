@@ -61,9 +61,32 @@ src/main/java/com/example/simpledemo/
     └── DemoChatConfiguration.java  # Chatbot bean for shell chat
 ```
 
+## Tutorial tiers
+
+Tutorial **docs** live on `main` (this branch). **Runnable code** for each tier is on the matching `feat/*` branch — check out the branch, then follow the linked doc.
+
+| Tier | Topic | Doc | Code branch |
+|------|--------|-----|-------------|
+| 1–3 | Shell, memory, tools, router | [TUTORIAL.md](TUTORIAL.md) | `feat/jinja`, `feat/memory`, `feat/memory-summarization`, `feat/router`, `feat/tools`, … |
+| 4 | Overview | [TUTORIAL-TIER4.md](TUTORIAL-TIER4.md) | — |
+| 4a | RAG & embeddings (17–19) | [TUTORIAL-TIER4-RAG.md](TUTORIAL-TIER4-RAG.md) | `feat/tier4-rag` |
+| 4b | Vector memory (20) | [TUTORIAL-TIER4-VECTOR-MEMORY.md](TUTORIAL-TIER4-VECTOR-MEMORY.md) | `feat/tier4-vector-memory` |
+| 4c | MCP (21–22) | [TUTORIAL-TIER4-MCP.md](TUTORIAL-TIER4-MCP.md) | `feat/tier4-mcp` |
+
+Quick Tier 4 start (checkout branch, then run):
+
+```bash
+git checkout feat/tier4-mcp
+./mvnw spring-boot:run
+# shell: rag-index
+# shell: x "generate a commit message for my current changes"
+```
+
 ## Docs
 
 - [TUTORIAL.md](TUTORIAL.md) — commit message agent in detail
+- [TUTORIAL-TIER4.md](TUTORIAL-TIER4.md) — Tier 4 index
+- [TUTORIAL-TIER4-RAG.md](TUTORIAL-TIER4-RAG.md) · [TUTORIAL-TIER4-VECTOR-MEMORY.md](TUTORIAL-TIER4-VECTOR-MEMORY.md) · [TUTORIAL-TIER4-MCP.md](TUTORIAL-TIER4-MCP.md)
 - [Embabel guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)
 
 ## Tests
