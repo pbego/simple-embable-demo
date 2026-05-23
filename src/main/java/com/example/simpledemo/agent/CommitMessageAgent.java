@@ -6,6 +6,7 @@ import com.embabel.agent.api.annotation.Agent;
 import com.embabel.agent.api.common.Ai;
 import com.embabel.agent.domain.io.UserInput;
 import com.example.simpledemo.git.GitChangesCollector;
+import com.example.simpledemo.memory.CommitVectorMemory;
 import com.example.simpledemo.rag.CommitStyleRetriever;
 
 /**
@@ -17,11 +18,15 @@ public class CommitMessageAgent {
 
   private final GitChangesCollector gitChangesCollector;
   private final CommitStyleRetriever commitStyleRetriever;
+  private final CommitVectorMemory commitVectorMemory;
 
   public CommitMessageAgent(
-      GitChangesCollector gitChangesCollector, CommitStyleRetriever commitStyleRetriever) {
+      GitChangesCollector gitChangesCollector,
+      CommitStyleRetriever commitStyleRetriever,
+      CommitVectorMemory commitVectorMemory) {
     this.gitChangesCollector = gitChangesCollector;
     this.commitStyleRetriever = commitStyleRetriever;
+    this.commitVectorMemory = commitVectorMemory;
   }
 
   @Action
@@ -48,7 +53,19 @@ public class CommitMessageAgent {
             """
                 .formatted(styleGuide);
 
-    return ai.withDefaultLlm()
+    var pastCommits = commitVectorMemory.recallSimilar(changes.status() + "\n" + changes.stagedDiff());
+    var memoryBlock =
+        pastCommits.isBlank()
+            ? ""
+            : """
+            ## Similar past commits (vector memory)
+            %s
+
+            """
+                .formatted(pastCommits);
+
+    var commit =
+        ai.withDefaultLlm()
         .createObject("""
             You are helping a developer write a git commit message.
 
@@ -56,6 +73,7 @@ public class CommitMessageAgent {
             (e.g. feat:, fix:, chore:, docs:). Subject: imperative mood, max 72 characters, no period.
             Body: explain what and why, wrapped at ~72 characters per line if needed.
 
+            %s
             %s
             Current branch: %s
 
@@ -74,11 +92,15 @@ public class CommitMessageAgent {
             Return JSON with fields: subject (string), body (string, may be empty).
             """.formatted(
             styleBlock,
+            memoryBlock,
             changes.branch(),
             changes.status(),
             changes.stagedDiff(),
             changes.unstagedDiff(),
             hintBlock),
         CommitMessage.class);
+
+    commitVectorMemory.remember(commit, changes.branch());
+    return commit;
   }
 }
