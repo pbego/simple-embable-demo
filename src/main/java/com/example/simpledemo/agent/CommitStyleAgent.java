@@ -3,6 +3,7 @@ package com.example.simpledemo.agent;
 import com.embabel.agent.api.annotation.AchievesGoal;
 import com.embabel.agent.api.annotation.Action;
 import com.embabel.agent.api.annotation.Agent;
+import com.embabel.agent.api.annotation.Export;
 import com.embabel.agent.api.common.Ai;
 import com.embabel.agent.domain.io.UserInput;
 import com.embabel.agent.rag.lucene.LuceneSearchOperations;
@@ -23,6 +24,7 @@ public class CommitStyleAgent {
 
   @AchievesGoal(description = "Explain how commits should be formatted in this repository")
   @Action
+  @Export(remote = true)
   public String explainCommitStyle(UserInput userInput, Ai ai) {
     if (searchOperations == null) {
       return "RAG is disabled. Set simple-demo.rag.enabled=true and run rag-index.";

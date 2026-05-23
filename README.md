@@ -61,9 +61,25 @@ src/main/java/com/example/simpledemo/
     └── DemoChatConfiguration.java  # Chatbot bean for shell chat
 ```
 
+## Tutorial tiers
+
+| Tier | Topic | Doc / branch |
+|------|--------|----------------|
+| 1–3 | Shell, memory, tools, router | Other `feat/*` branches; [TUTORIAL.md](TUTORIAL.md) |
+| 4 | RAG, embeddings, MCP | [TUTORIAL-TIER4.md](TUTORIAL-TIER4.md) — `feat/tier4-rag` → `feat/tier4-vector-memory` → `feat/tier4-mcp` |
+
+Quick Tier 4 start (on `feat/tier4-mcp`):
+
+```bash
+./mvnw spring-boot:run
+# shell: rag-index
+# shell: x "generate a commit message for my current changes"
+```
+
 ## Docs
 
 - [TUTORIAL.md](TUTORIAL.md) — commit message agent in detail
+- [TUTORIAL-TIER4.md](TUTORIAL-TIER4.md) — RAG, vector memory, MCP
 - [Embabel guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)
 
 ## Tests

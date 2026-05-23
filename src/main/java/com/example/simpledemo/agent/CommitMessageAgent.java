@@ -3,6 +3,7 @@ package com.example.simpledemo.agent;
 import com.embabel.agent.api.annotation.AchievesGoal;
 import com.embabel.agent.api.annotation.Action;
 import com.embabel.agent.api.annotation.Agent;
+import com.embabel.agent.api.annotation.Export;
 import com.embabel.agent.api.common.Ai;
 import com.embabel.agent.domain.io.UserInput;
 import com.example.simpledemo.git.GitChangesCollector;
@@ -36,6 +37,7 @@ public class CommitMessageAgent {
 
   @AchievesGoal(description = "Propose a commit message for the current changes")
   @Action
+  @Export(remote = true)
   public CommitMessage generateCommitMessage(GitChanges changes, UserInput userInput, Ai ai) {
     var hint = changes.userHint().isBlank() ? userInput.getContent() : changes.userHint();
     var hintBlock = hint.isBlank()
