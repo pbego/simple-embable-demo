@@ -18,6 +18,17 @@ Also try:
 
 - `x "hello"` → **GreetingAgent** (no LLM)
 - `x "tell me a joke"` → **JokeAgent** (one LLM step)
+- `x "what branch am I on?"` → **GitInfoAgent** (LLM + **git tools** — see below)
+
+### Git tools (`@LlmTool`)
+
+**GitRepository** exposes read-only git facts as LLM-callable tools (`currentBranch`, `shortStatus`, `lastCommit`, `listBranches`). **GitInfoAgent** passes the repository to the model with `ai.withToolObject(repository)` so it looks up real data instead of guessing.
+
+```
+UserInput  →  answerAboutRepo  →  LLM + GitRepository tools  →  plain-text answer
+```
+
+Run from a git work tree (or set `simple-demo.git.work-tree`). The tools execute local `git` commands via **GitExecutor**.
 
 ### 2. Chat + router — shell `chat`
 
@@ -70,6 +81,7 @@ shell:> agents
 # Orchestrator
 shell:> x "generate a commit message for my current changes"
 shell:> x "tell me a joke about spring"
+shell:> x "what branch am I on and what was the last commit?"
 
 # Chat + router
 shell:> chat
@@ -100,7 +112,7 @@ Run from a git work tree or set `simple-demo.git.work-tree=/path/to/repo`.
 ./mvnw test
 ```
 
-Includes `ChatRouterTest` (routing keywords only).
+Includes `ChatRouterTest`, `GitRepositoryTest` (tool registration and git invocation), and `GitInfoAgentTest` (fake LLM with tools).
 
 ## Further reading
 
