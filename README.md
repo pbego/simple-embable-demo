@@ -66,9 +66,12 @@ src/main/java/com/example/simpledemo/
 | Tier | Topic | Doc / branch |
 |------|--------|----------------|
 | 1–3 | Shell, memory, tools, router | Other `feat/*` branches; [TUTORIAL.md](TUTORIAL.md) |
-| 4 | RAG, embeddings, MCP | [TUTORIAL-TIER4.md](TUTORIAL-TIER4.md) — `feat/tier4-rag` → `feat/tier4-vector-memory` → `feat/tier4-mcp` |
+| 4 | Overview | [TUTORIAL-TIER4.md](TUTORIAL-TIER4.md) |
+| 4a | RAG & embeddings (17–19) | [TUTORIAL-TIER4-RAG.md](TUTORIAL-TIER4-RAG.md) — `feat/tier4-rag` |
+| 4b | Vector memory (20) | [TUTORIAL-TIER4-VECTOR-MEMORY.md](TUTORIAL-TIER4-VECTOR-MEMORY.md) — `feat/tier4-vector-memory` |
+| 4c | MCP (21–22) | [TUTORIAL-TIER4-MCP.md](TUTORIAL-TIER4-MCP.md) — `feat/tier4-mcp` |
 
-Quick Tier 4 start (on `feat/tier4-mcp`):
+Quick Tier 4 start (full stack on `feat/tier4-mcp`):
 
 ```bash
 ./mvnw spring-boot:run
@@ -79,7 +82,8 @@ Quick Tier 4 start (on `feat/tier4-mcp`):
 ## Docs
 
 - [TUTORIAL.md](TUTORIAL.md) — commit message agent in detail
-- [TUTORIAL-TIER4.md](TUTORIAL-TIER4.md) — RAG, vector memory, MCP
+- [TUTORIAL-TIER4.md](TUTORIAL-TIER4.md) — Tier 4 index
+- [TUTORIAL-TIER4-RAG.md](TUTORIAL-TIER4-RAG.md) · [TUTORIAL-TIER4-VECTOR-MEMORY.md](TUTORIAL-TIER4-VECTOR-MEMORY.md) · [TUTORIAL-TIER4-MCP.md](TUTORIAL-TIER4-MCP.md)
 - [Embabel guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)
 
 ## Tests

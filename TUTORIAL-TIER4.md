@@ -1,160 +1,78 @@
-# Tier 4 — RAG, embeddings, and MCP
+# Tier 4 — Overview
 
-Tier 4 extends the commit assistant with **retrieval** (repo docs, past commits) and **MCP** (external tools + IDE integration). Tier 1–3 (shell, memory, tools, router) live on other `feat/*` branches; Tier 4 is split into three git branches you can check out in order.
+Tier 4 extends the commit assistant beyond **live git state** and **chat transcripts** (Tiers 1–3). It adds:
 
-## Branches
+1. **Retrieval** — house rules and example commits from docs on disk (RAG).
+2. **Semantic memory** — similar past suggestions without keyword search.
+3. **MCP** — external tools in, agents exposed to IDEs out.
 
-| Branch | Tutorials | What you get |
-|--------|-----------|--------------|
-| `feat/tier4-rag` | 17–19 | Lucene index, one-shot RAG in commits, agentic `ToolishRag`, Ollama embeddings |
-| `feat/tier4-vector-memory` | 20 | `SimpleVectorStore` remembers past commit suggestions |
-| `feat/tier4-mcp` | 21–22 | Consume filesystem MCP; publish agents as MCP server |
+Each topic has its own branch and tutorial doc. Check them out in order so dependencies build naturally.
 
-```bash
-git checkout feat/tier4-rag          # start here
-# later: feat/tier4-vector-memory, feat/tier4-mcp
+## How Tier 4 fits the bigger picture
+
+```mermaid
+flowchart TB
+  subgraph tier13 [Tiers 1-3 other feat branches]
+    Git[GitChangesCollector]
+    Mem[File chat memory]
+    Router[ChatRouter]
+  end
+
+  subgraph tier4 [Tier 4]
+    RAG[Lucene RAG]
+    VecMem[Vector memory]
+    MCP[MCP in and out]
+  end
+
+  User -->|x or chat| Router
+  Router --> CommitAgent[CommitMessageAgent]
+  Git --> CommitAgent
+  RAG --> CommitAgent
+  VecMem --> CommitAgent
+  MCP --> CommitAgent
 ```
 
-## Prerequisites
+| You already have (Tiers 1–3) | Tier 4 adds |
+|------------------------------|-------------|
+| Current branch, status, diffs | “What does *this repo* say about commit format?” |
+| Conversation history on disk | “Have we suggested a commit like this before?” |
+| Local `@Tool` on git | Read files / issues via MCP; expose agents to Cursor |
 
-| Requirement | Used for |
+## Branch → tutorial doc
+
+| Order | Branch | Doc | Tutorials |
+|-------|--------|-----|-----------|
+| 1 | `feat/tier4-rag` | [TUTORIAL-TIER4-RAG.md](TUTORIAL-TIER4-RAG.md) | 17–19 — Lucene RAG, agentic search, embeddings |
+| 2 | `feat/tier4-vector-memory` | [TUTORIAL-TIER4-VECTOR-MEMORY.md](TUTORIAL-TIER4-VECTOR-MEMORY.md) | 20 — vector store for past commits |
+| 3 | `feat/tier4-mcp` | [TUTORIAL-TIER4-MCP.md](TUTORIAL-TIER4-MCP.md) | 21–22 — consume and publish MCP |
+
+```bash
+git checkout feat/tier4-rag
+# … work through TUTORIAL-TIER4-RAG.md …
+
+git checkout feat/tier4-vector-memory
+# … TUTORIAL-TIER4-VECTOR-MEMORY.md …
+
+git checkout feat/tier4-mcp
+# … TUTORIAL-TIER4-MCP.md (full stack) …
+```
+
+On `feat/tier4-mcp`, all three topics are present in one tree; earlier branches contain subsets.
+
+## Shared prerequisites
+
+| Requirement | Branches |
 |-------------|----------|
-| Java 21, `./mvnw` | All tutorials |
-| Ollama `gemma4:e4b` (chat LLM) | Agents + chat |
-| Ollama `nomic-embed-text` | Lucene vector search + vector memory |
-| Git | Commit agent |
-| `rag-index` once per machine | Tutorials 17–18 |
-| Node `npx` (optional) | Tutorial 21 (`mcp` profile, filesystem MCP) |
-| Second terminal / Cursor | Tutorial 22 (`mcp-server` profile) |
+| Java 21, `./mvnw` | All |
+| Ollama `gemma4:e4b` | All |
+| Ollama `nomic-embed-text` | RAG, vector-memory |
+| Git | All (commit agent) |
+| Node `npx` | MCP (consume profile) |
 
 ```bash
 ollama pull gemma4:e4b
-ollama pull nomic-embed-text
+ollama pull nomic-embed-text   # before RAG / vector-memory
 ```
-
-## Tutorial 17 — Local RAG (Lucene)
-
-**Embabel guide:** RAG, Lucene module.
-
-1. Start the app: `./mvnw spring-boot:run`
-2. Build the index:
-
-```text
-shell:> rag-index
-```
-
-3. Debug search without LLM:
-
-```text
-shell:> rag-search -q "conventional commits subject"
-```
-
-4. Generate a commit (RAG injects chunks into the prompt):
-
-```text
-shell:> x "generate a commit message for my current changes"
-```
-
-Sources are configured in `simple-demo.rag.sources` (defaults: `docs/COMMIT_CONVENTIONS.md`, `TUTORIAL.md`, `rag-sources/past-commits.sample.txt`).
-
-## Tutorial 18 — Agentic RAG
-
-**Embabel guide:** Agentic RAG, `ToolishRag`.
-
-The LLM chooses when to call vector/text search tools:
-
-```text
-shell:> x "how do we format commits in this repo?"
-```
-
-Or in chat:
-
-```text
-shell:> chat
-chat:> how do we format commits here?
-```
-
-(`ChatRouter` routes convention questions to `CommitStyleAgent`.)
-
-## Tutorial 19 — Embeddings (Ollama)
-
-**Embabel guide:** ONNX embeddings (optional); this demo uses Ollama only.
-
-```properties
-embabel.models.default-embedding-model=nomic-embed-text
-spring.ai.ollama.embedding.options.model=nomic-embed-text
-```
-
-Lucene `vectorSearch` uses `ModelProvider.getEmbeddingService()`. If `rag-index` fails with “embedding service not found”, pull the model and restart.
-
-## Tutorial 20 — Long-term vector memory
-
-**Spring AI:** `VectorStoreChatMemoryAdvisor` (see `SpringAiVectorMemoryConfiguration` Javadoc for a parallel pattern).
-
-Each generated commit is stored in `~/.simple-demo/vector-memory.json`. The next run recalls similar subjects:
-
-```properties
-simple-demo.vector-memory.enabled=true
-```
-
-Disable in tests with `simple-demo.vector-memory.enabled=false`.
-
-| Concern | Tier 2 file chat (other branch) | Tutorial 20 |
-|---------|----------------------------------|-------------|
-| Full transcript | JSON per session | Not stored here |
-| “Similar commit before?” | Keyword-poor | Vector similarity |
-
-## Tutorial 21 — Consume MCP tools
-
-**Embabel guide:** MCP consuming.
-
-```bash
-SPRING_PROFILES_ACTIVE=mcp ./mvnw spring-boot:run
-```
-
-Requires `npx` and `@modelcontextprotocol/server-filesystem`. Optional GitHub MCP is documented in `application-mcp.properties`.
-
-```text
-shell:> x "read docs/COMMIT_CONVENTIONS.md and summarize commit rules"
-```
-
-(`McpFilesystemAgent` uses tool group `filesystem`.)
-
-## Tutorial 22 — Publish as MCP server
-
-**Embabel guide:** MCP server starter.
-
-```bash
-SPRING_PROFILES_ACTIVE=mcp-server ./mvnw spring-boot:run
-```
-
-- SSE endpoint: `http://localhost:8081/sse`
-- Goals with `@Export(remote = true)` become MCP tools (`CommitMessageAgent`, `CommitStyleAgent`)
-
-**Cursor** (`~/.cursor/mcp.json` example):
-
-```json
-{
-  "mcpServers": {
-    "simple-demo-commit": {
-      "url": "http://localhost:8081/sse"
-    }
-  }
-}
-```
-
-Default `./mvnw spring-boot:run` (no profile) keeps the interactive shell only; MCP server autoconfig stays off via `spring.autoconfigure.exclude` until `simple-demo.mcp-server.enabled=true`.
-
-## Mapping to Embabel / Spring AI docs
-
-| Tutorial | Embabel | Spring AI |
-|----------|---------|-----------|
-| 17 | RAG, Lucene | — |
-| 18 | Agentic RAG, `ToolishRag` | — |
-| 19 | Embeddings / Ollama | Ollama embedding model |
-| 20 | — | `SimpleVectorStore`, advisor pattern in Javadoc |
-| 21 | MCP consuming, tool groups | MCP client |
-| 22 | MCP server starter | `spring.ai.mcp.server` |
 
 ## Tests
 
@@ -162,4 +80,9 @@ Default `./mvnw spring-boot:run` (no profile) keeps the interactive shell only; 
 ./mvnw test
 ```
 
-RAG and vector memory are disabled in `src/test/resources/application.properties` so CI does not need Ollama embeddings. `McpServerProfileTest` smoke-loads the `mcp-server` profile with a random port.
+RAG and vector memory are off in `src/test/resources/application.properties`. `McpServerProfileTest` smoke-loads the `mcp-server` profile.
+
+## Further reading
+
+- [TUTORIAL.md](TUTORIAL.md) — Tiers 1–2 on `main` (shell `x`, chat, commit agent)
+- [Embabel Agent Guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)
