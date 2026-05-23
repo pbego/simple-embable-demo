@@ -19,6 +19,14 @@ class ChatRouterTest {
   }
 
   @Test
+  void fromMessageRoutesStyleQuestions() {
+    assertEquals(ChatRouter.RouteTarget.STYLE, ChatRouter.fromMessage("how do we format commits?"));
+    assertEquals(ChatRouter.RouteTarget.STYLE, ChatRouter.fromMessage("commit conventions"));
+    assertEquals(
+        ChatRouter.RouteTarget.COMMIT, ChatRouter.fromMessage("generate a commit message"));
+  }
+
+  @Test
   void fromMessageDefaultsToGreeting() {
     assertEquals(ChatRouter.RouteTarget.GREETING, ChatRouter.fromMessage("hello there"));
     assertEquals(ChatRouter.RouteTarget.GREETING, ChatRouter.fromMessage(""));

@@ -1,0 +1,33 @@
+# Sample past commit messages for RAG indexing (tutorial corpus)
+
+feat(agent): add commit message agent with git diff collection
+
+Collect branch, status, and staged/unstaged diffs before calling the local LLM.
+
+fix(chat): route commit keywords to CommitMessageAgent
+
+Match "commit" and "git" in chat so users get structured messages without x.
+
+docs: add TUTORIAL.md for shell x and chat flows
+
+Explain orchestrator vs router patterns and Ollama prerequisites.
+
+chore: configure simple-demo.git.work-tree default
+
+Allow running from a subdirectory while still inspecting the intended repo.
+
+feat(chat): wire AgentProcessChatbot for persistent chat
+
+Use utility actions so ChatRouter runs on each UserMessage.
+
+refactor(agent): extract GitChangesCollector from CommitMessageAgent
+
+Keep git CLI logic testable without loading the LLM stack.
+
+test: add ChatRouterTest for keyword routing
+
+Cover joke, commit, and greeting paths without Ollama.
+
+docs(readme): document two ways to run agents
+
+Table comparing shell x and chat for new contributors.

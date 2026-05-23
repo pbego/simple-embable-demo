@@ -9,6 +9,7 @@ import com.embabel.chat.Conversation;
 import com.embabel.chat.UserMessage;
 import com.example.simpledemo.agent.CommitMessage;
 import com.example.simpledemo.agent.CommitMessageAgent;
+import com.example.simpledemo.agent.CommitStyleAgent;
 import com.example.simpledemo.agent.GreetingAgent;
 import com.example.simpledemo.agent.JokeAgent;
 import com.example.simpledemo.agent.JokeResult;
@@ -31,12 +32,17 @@ public class ChatRouter {
   private final GreetingAgent greetingAgent;
   private final JokeAgent jokeAgent;
   private final CommitMessageAgent commitMessageAgent;
+  private final CommitStyleAgent commitStyleAgent;
 
   public ChatRouter(
-      GreetingAgent greetingAgent, JokeAgent jokeAgent, CommitMessageAgent commitMessageAgent) {
+      GreetingAgent greetingAgent,
+      JokeAgent jokeAgent,
+      CommitMessageAgent commitMessageAgent,
+      CommitStyleAgent commitStyleAgent) {
     this.greetingAgent = greetingAgent;
     this.jokeAgent = jokeAgent;
     this.commitMessageAgent = commitMessageAgent;
+    this.commitStyleAgent = commitStyleAgent;
   }
 
   @Action(canRerun = true, trigger = UserMessage.class)
@@ -55,6 +61,7 @@ public class ChatRouter {
         switch (route) {
           case JOKE -> formatJoke(jokeAgent.tell(new JokeAgent.Request(question), context.ai()));
           case COMMIT -> suggestCommitMessage(question, context);
+          case STYLE -> explainCommitStyle(question, context);
           case GREETING -> greetingAgent.greet(new GreetingAgent.Request(question));
         };
 
@@ -69,10 +76,21 @@ public class ChatRouter {
     if (text.contains("joke") || text.contains("funny")) {
       return RouteTarget.JOKE;
     }
+    if (isStyleQuestion(text)) {
+      return RouteTarget.STYLE;
+    }
     if (text.contains("commit") || text.contains("git")) {
       return RouteTarget.COMMIT;
     }
     return RouteTarget.GREETING;
+  }
+
+  private static boolean isStyleQuestion(String text) {
+    return text.contains("convention")
+        || text.contains("conventional")
+        || (text.contains("format") && text.contains("commit"))
+        || text.contains("style guide")
+        || (text.contains("how") && text.contains("commit") && !text.contains("generate"));
   }
 
   private static String formatJoke(JokeResult result) {
@@ -80,6 +98,14 @@ public class ChatRouter {
       return "I couldn't think of a joke right now.";
     }
     return result.joke().trim();
+  }
+
+  private String explainCommitStyle(String question, ActionContext context) {
+    var userInput = new UserInput(question != null ? question : "");
+    var answer = commitStyleAgent.explainCommitStyle(userInput, context.ai());
+    return answer == null || answer.isBlank()
+        ? "Run rag-index first, then ask about commit conventions."
+        : answer.trim();
   }
 
   private String suggestCommitMessage(String question, ActionContext context) {
@@ -99,6 +125,7 @@ public class ChatRouter {
   enum RouteTarget {
     GREETING,
     JOKE,
-    COMMIT
+    COMMIT,
+    STYLE
   }
 }
