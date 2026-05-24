@@ -2,7 +2,7 @@
 
 This project is a minimal [Embabel](https://docs.embabel.com/embabel-agent/guide/0.1.3/) agent that runs on your machine with [Ollama](https://ollama.com/) (**gemma4:e4b**). It reads **real git changes** from your repo and suggests a **Conventional Commits**-style message. No cloud API keys required.
 
-**Chat history and memory:** see [TUTORIAL_MEMORY.md](TUTORIAL_MEMORY.md) for persistent conversations (`chat`, `conversations`, `resume-chat`).
+**Chat history and memory:** see [TUTORIAL-MEMORY-SUMMARIZATION.md](TUTORIAL-MEMORY-SUMMARIZATION.md) for persistent conversations (`chat`, `conversations`, `resume-chat`).
 
 ## What we built
 
@@ -33,7 +33,7 @@ This mixes **code agency** (git) with **LLM agency** (wording the commit), which
 simple-demo/
 ├── pom.xml
 ├── TUTORIAL.md
-├── TUTORIAL_MEMORY.md
+├── TUTORIAL-MEMORY-SUMMARIZATION.md
 └── src/main/java/com/example/simpledemo/
     ├── SimpleDemoApplication.java
     ├── agent/
@@ -61,7 +61,7 @@ simple-demo/
 | `embabel.models.default-llm` | `gemma4:e4b` | Model for commit message generation |
 | `simple-demo.git.work-tree` | `.` | Directory passed to `git -C` (use repo root) |
 | `simple-demo.conversations-dir` | `~/.simple-demo/conversations` | Saved chat JSON files |
-| `simple-demo.memory-max-messages` | `20` | Recent messages in LLM context (see [TUTORIAL_MEMORY.md](TUTORIAL_MEMORY.md)) |
+| `simple-demo.memory-max-messages` | `20` | Recent messages in LLM context (see [TUTORIAL-MEMORY-SUMMARIZATION.md](TUTORIAL-MEMORY-SUMMARIZATION.md)) |
 | `simple-demo.memory-summarization-enabled` | `true` | Summarize older turns when window exceeded |
 
 ## Run and try

@@ -1,4 +1,4 @@
-# Chat history and memory
+# Chat history, windowing & summarization
 
 This guide explains how **simple-demo** saves conversations to disk, how the LLM uses prior messages as **memory**, and which shell commands to use.
 
