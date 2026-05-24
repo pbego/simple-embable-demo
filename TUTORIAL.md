@@ -41,6 +41,10 @@ Configure via `DemoChatConfiguration`: `AgentProcessChatbot.utilityFromPlatform(
 | `@Agent` workers | `Support`, `Insights`, `Rca`, … |
 | `x` multi-step | RCA workflows, `CommitMessageAgent`-style chains |
 
+## RAG (this branch only)
+
+On **`feat/tier4-rag`**, commit generation can pull repository style docs from a Lucene index before calling the LLM. That is covered in **[TUTORIAL-RAG.md](TUTORIAL-RAG.md)** (concepts, one-shot vs agentic flows, `rag-index`). On **`main`**, skip that file — it is not present there.
+
 ## Prerequisites
 
 | Requirement | Notes |
@@ -48,6 +52,7 @@ Configure via `DemoChatConfiguration`: `AgentProcessChatbot.utilityFromPlatform(
 | Java 21 | `pom.xml` |
 | Maven | `./mvnw` |
 | Ollama | `http://localhost:11434`, model `gemma4:e4b` |
+| Ollama embeddings | **`feat/tier4-rag` only:** `nomic-embed-text` — see [TUTORIAL-RAG.md](TUTORIAL-RAG.md) |
 | Git | Only for commit `x` examples |
 
 ## Configuration
@@ -104,5 +109,7 @@ Includes `ChatRouterTest` (routing keywords only).
 
 ## Further reading
 
+- [TUTORIAL-RAG.md](TUTORIAL-RAG.md) — RAG on `feat/tier4-rag` (not on `main`)
+- [README.md](README.md) — how to test the current branch
 - [Embabel User Guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)
 - [iax-app-ai docs/embabel-flow.md](https://github.com/ITRS-Group/iax-app-ai/blob/dev/docs/embabel-flow.md) (production routing)

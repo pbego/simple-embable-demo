@@ -13,3 +13,10 @@
 1779206419603:generate commit message
 1779206430674:x "generate a commit message for my current changes"
 1779365240607:chat
+1779616117300:rag-index
+1779616138003:rag-search -q "conventional commits subject"
+1779616753103:help
+1779616779003:rag-index
+1779616789797:rag-search --query "conventional commits subject"
+1779617151043:x "generate a commit message for my current changes"
+1779617207485:chat
