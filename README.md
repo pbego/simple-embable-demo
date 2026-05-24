@@ -2,7 +2,9 @@
 
 Minimal Embabel examples: **orchestrator** (`x`) vs **chat** (`chat` + router), with local Ollama.
 
-## Two ways to run agents
+The **`main`** branch is the baseline (commit agent, greeting, joke, keyword router). Each **`feat/*`** branch adds one topic; the hands-on guide for that topic is a **`TUTORIAL-*.md` file on that branch only** (not on `main`).
+
+## Two ways to run agents (main)
 
 | Shell command | What it demonstrates | In this project |
 |---------------|----------------------|-----------------|
@@ -18,75 +20,62 @@ This mirrors the IAX Embabel daemon pattern: gRPC chat ≈ `chat`, multi-step ag
 - Model: `ollama pull gemma4:e4b` (must match `embabel.models.default-llm` in `application.properties`)
 - Git (only for commit-message `x` examples)
 
-## Run
+## Run (main)
 
 ```bash
+git checkout main
 ./mvnw spring-boot:run
 ```
-
-### Orchestrator (`x`) — multi-step
 
 ```text
 agents
 x "generate a commit message for my current changes"
-x "tell me a joke about kubernetes"
-x "hello"
-```
-
-`CommitMessageAgent` runs **collectChanges** (git, no LLM) then **generateCommitMessage** (LLM).
-
-### Chat — router + sub-agents
-
-```text
 chat
-chat:> hello
-chat:> tell me a joke
-chat:> commit message for my changes
-chat:> exit
 ```
 
-`ChatRouter` dispatches by keywords (see `ChatRouter.fromMessage`). Commit routes call `collectChanges` then `generateCommitMessage` directly (same logic as the `x` planner path).
+See [TUTORIAL.md](TUTORIAL.md) on this branch for detail.
 
-## Layout
+## Feature branches
+
+Check out a branch, then read its tutorial file in the repo root.
+
+| Branch | What we covered | Tutorial on branch |
+|--------|-----------------|-------------------|
+| **`main`** | Baseline: `CommitMessageAgent` (git → LLM), `GreetingAgent`, `JokeAgent`, shell `x` / `chat`, keyword `ChatRouter` | [TUTORIAL.md](TUTORIAL.md) |
+| **`feat/jinja`** | Jinja/Jinjava prompts for commit generation; shared fragments under `prompts/commit/` | `TUTORIAL-JINJA.md` |
+| **`feat/memory`** | File-backed chat history (`~/.simple-demo/conversations`), `resume-chat`, message windowing (last N turns to the model) | `TUTORIAL-MEMORY.md` |
+| **`feat/memory-summarization`** | Everything on `feat/memory`, plus rolling **session summary** when the window is exceeded | `TUTORIAL-MEMORY-SUMMARIZATION.md` |
+| **`feat/router`** | Richer `ChatRouter`: explicit and natural-language routing to specialists | `TUTORIAL-ROUTER.md` |
+| **`feat/tools`** | `GitInfoAgent` with `@Tool` on `GitRepository` so the LLM queries real git state | `TUTORIAL-TOOLS.md` |
+| **`feat/tier4-rag`** | Lucene RAG over repo docs, one-shot retrieval in commits, agentic `ToolishRag`, Ollama embeddings | `TUTORIAL-RAG.md` |
+| **`feat/tier4-vector-memory`** | `SimpleVectorStore` remembers past commit suggestions (semantic recall) | `TUTORIAL-VECTOR-MEMORY.md` |
+| **`feat/tier4-mcp`** | Full stack above + consume filesystem MCP + publish agents as MCP server (SSE) | `TUTORIAL-MCP.md` |
+
+Suggested order: `main` → `feat/jinja` → `feat/memory` → `feat/memory-summarization` → `feat/router` → `feat/tools` → `feat/tier4-rag` → `feat/tier4-vector-memory` → `feat/tier4-mcp`.
+
+```bash
+git checkout feat/tier4-rag
+cat TUTORIAL-RAG.md
+./mvnw spring-boot:run
+```
+
+## Layout (main)
 
 ```
 src/main/java/com/example/simpledemo/
 ├── agent/
-│   ├── CommitMessageAgent.java   # multi-step @Agent (orchestrator)
-│   ├── GreetingAgent.java        # no LLM
-│   └── JokeAgent.java            # single-step LLM
+│   ├── CommitMessageAgent.java
+│   ├── GreetingAgent.java
+│   └── JokeAgent.java
 ├── chat/
-│   └── ChatRouter.java           # @EmbabelComponent, trigger UserMessage
+│   └── ChatRouter.java
 └── config/
-    └── DemoChatConfiguration.java  # Chatbot bean for shell chat
-```
-
-## Tutorial tiers
-
-Tutorial **docs** live on `main` (this branch). **Runnable code** for each tier is on the matching `feat/*` branch — check out the branch, then follow the linked doc.
-
-| Tier | Topic | Doc | Code branch |
-|------|--------|-----|-------------|
-| 1–3 | Shell, memory, tools, router | [TUTORIAL.md](TUTORIAL.md) | `feat/jinja`, `feat/memory`, `feat/memory-summarization`, `feat/router`, `feat/tools`, … |
-| 4 | Overview | [TUTORIAL-TIER4.md](TUTORIAL-TIER4.md) | — |
-| 4a | RAG & embeddings (17–19) | [TUTORIAL-TIER4-RAG.md](TUTORIAL-TIER4-RAG.md) | `feat/tier4-rag` |
-| 4b | Vector memory (20) | [TUTORIAL-TIER4-VECTOR-MEMORY.md](TUTORIAL-TIER4-VECTOR-MEMORY.md) | `feat/tier4-vector-memory` |
-| 4c | MCP (21–22) | [TUTORIAL-TIER4-MCP.md](TUTORIAL-TIER4-MCP.md) | `feat/tier4-mcp` |
-
-Quick Tier 4 start (checkout branch, then run):
-
-```bash
-git checkout feat/tier4-mcp
-./mvnw spring-boot:run
-# shell: rag-index
-# shell: x "generate a commit message for my current changes"
+    └── DemoChatConfiguration.java
 ```
 
 ## Docs
 
-- [TUTORIAL.md](TUTORIAL.md) — commit message agent in detail
-- [TUTORIAL-TIER4.md](TUTORIAL-TIER4.md) — Tier 4 index
-- [TUTORIAL-TIER4-RAG.md](TUTORIAL-TIER4-RAG.md) · [TUTORIAL-TIER4-VECTOR-MEMORY.md](TUTORIAL-TIER4-VECTOR-MEMORY.md) · [TUTORIAL-TIER4-MCP.md](TUTORIAL-TIER4-MCP.md)
+- [TUTORIAL.md](TUTORIAL.md) — baseline commit agent and shell flows
 - [Embabel guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)
 
 ## Tests
@@ -95,4 +84,4 @@ git checkout feat/tier4-mcp
 ./mvnw test
 ```
 
-No Ollama required for unit tests.
+No Ollama required for unit tests on `main`.

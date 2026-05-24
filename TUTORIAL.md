@@ -104,6 +104,6 @@ Includes `ChatRouterTest` (routing keywords only).
 
 ## Further reading
 
-- [TUTORIAL-TIER4.md](TUTORIAL-TIER4.md) — Tier 4 index (RAG, vector memory, MCP on `feat/tier4-*` branches)
+- [README.md](README.md#feature-branches) — all `feat/*` branches and where each tutorial lives
 - [Embabel User Guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)
 - [iax-app-ai docs/embabel-flow.md](https://github.com/ITRS-Group/iax-app-ai/blob/dev/docs/embabel-flow.md) (production routing)
