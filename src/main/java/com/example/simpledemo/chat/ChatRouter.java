@@ -43,16 +43,19 @@ public class ChatRouter {
   private final JokeAgent jokeAgent;
   private final CommitMessageAgent commitMessageAgent;
   private final CommitStyleAgent commitStyleAgent;
+  private final SessionSummaryService sessionSummaryService;
 
   public ChatRouter(
       GreetingAgent greetingAgent,
       JokeAgent jokeAgent,
       CommitMessageAgent commitMessageAgent,
-      CommitStyleAgent commitStyleAgent) {
+      CommitStyleAgent commitStyleAgent,
+      SessionSummaryService sessionSummaryService) {
     this.greetingAgent = greetingAgent;
     this.jokeAgent = jokeAgent;
     this.commitMessageAgent = commitMessageAgent;
     this.commitStyleAgent = commitStyleAgent;
+    this.sessionSummaryService = sessionSummaryService;
   }
 
   @Action(canRerun = true, trigger = UserMessage.class)
@@ -62,6 +65,8 @@ public class ChatRouter {
       logger.debug("Skipping non-user message");
       return;
     }
+
+    sessionSummaryService.refreshSummaryIfNeeded(conversation, context);
 
     var raw = lastUserMessage.getContent();
     var parsed = parseMessage(raw);

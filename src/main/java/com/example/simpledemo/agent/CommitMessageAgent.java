@@ -106,7 +106,11 @@ public class CommitMessageAgent {
     if (developerHint.isBlank()) {
       return "";
     }
-    return "## Developer instructions\n" + JinjavaSafe.escape(developerHint) + "\n";
+    return """
+        ## Developer instructions (MUST follow — override default wording inferred from diffs)
+        %s
+        """
+        .formatted(JinjavaSafe.escape(developerHint));
   }
 
   private static String buildStyleGuideSection(String styleGuide) {
