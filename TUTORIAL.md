@@ -41,6 +41,10 @@ Configure via `DemoChatConfiguration`: `AgentProcessChatbot.utilityFromPlatform(
 | `@Agent` workers | `Support`, `Insights`, `Rca`, … |
 | `x` multi-step | RCA workflows, `CommitMessageAgent`-style chains |
 
+## Tier 4 on this branch (`feat/tier4-mcp`)
+
+Full stack: [TUTORIAL-RAG.md](TUTORIAL-RAG.md), [TUTORIAL-VECTOR-MEMORY.md](TUTORIAL-VECTOR-MEMORY.md), **[TUTORIAL-MCP.md](TUTORIAL-MCP.md)** (MCP consume `mcp` profile, publish `mcp-server` profile). See [README.md](README.md#testing-this-branch-feattier4-mcp).
+
 ## Prerequisites
 
 | Requirement | Notes |
@@ -48,6 +52,8 @@ Configure via `DemoChatConfiguration`: `AgentProcessChatbot.utilityFromPlatform(
 | Java 21 | `pom.xml` |
 | Maven | `./mvnw` |
 | Ollama | `http://localhost:11434`, model `gemma4:e4b` |
+| Embeddings | Tier 4: `nomic-embed-text` (exact tag from `ollama list`) |
+| `npx` | MCP consume profile only |
 | Git | Only for commit `x` examples |
 
 ## Configuration
@@ -104,5 +110,8 @@ Includes `ChatRouterTest` (routing keywords only).
 
 ## Further reading
 
+- [TUTORIAL-MCP.md](TUTORIAL-MCP.md) — MCP on `feat/tier4-mcp`
+- [TUTORIAL-RAG.md](TUTORIAL-RAG.md) · [TUTORIAL-VECTOR-MEMORY.md](TUTORIAL-VECTOR-MEMORY.md)
+- [README.md](README.md) — how to test the current branch
 - [Embabel User Guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)
 - [iax-app-ai docs/embabel-flow.md](https://github.com/ITRS-Group/iax-app-ai/blob/dev/docs/embabel-flow.md) (production routing)

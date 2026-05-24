@@ -13,3 +13,5 @@
 1779206419603:generate commit message
 1779206430674:x "generate a commit message for my current changes"
 1779365240607:chat
+1779621312925:agents
+1779621369575:x "read the file docs/COMMIT_CONVENTIONS.md in this repo and list three commit rules"
