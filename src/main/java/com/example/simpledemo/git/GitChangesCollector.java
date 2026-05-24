@@ -1,10 +1,6 @@
 package com.example.simpledemo.git;
 
 import com.example.simpledemo.agent.GitChanges;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,40 +11,18 @@ public class GitChangesCollector {
 
   private static final int MAX_DIFF_CHARS = 12_000;
 
-  private final Path workTree;
+  private final GitExecutor gitExecutor;
 
-  public GitChangesCollector(
-      @Value("${simple-demo.git.work-tree:.}") String workTreePath) {
-    this.workTree = Path.of(workTreePath).toAbsolutePath().normalize();
+  public GitChangesCollector(GitExecutor gitExecutor) {
+    this.gitExecutor = gitExecutor;
   }
 
   public GitChanges collect(String userHint) {
-    var branch = runGit("branch", "--show-current");
-    var status = runGit("status", "--short");
-    var stagedDiff = truncate(runGit("diff", "--staged"));
-    var unstagedDiff = truncate(runGit("diff"));
+    var branch = gitExecutor.runGit("branch", "--show-current");
+    var status = gitExecutor.runGit("status", "--short");
+    var stagedDiff = truncate(gitExecutor.runGit("diff", "--staged"));
+    var unstagedDiff = truncate(gitExecutor.runGit("diff"));
     return new GitChanges(branch, status, stagedDiff, unstagedDiff, userHint == null ? "" : userHint.trim());
-  }
-
-  private String runGit(String... args) {
-    var command = new String[args.length + 1];
-    command[0] = "git";
-    System.arraycopy(args, 0, command, 1, args.length);
-    try {
-      var process = new ProcessBuilder(command)
-          .directory(workTree.toFile())
-          .redirectErrorStream(true)
-          .start();
-      var output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
-      var exitCode = process.waitFor();
-      if (exitCode != 0 && output.isEmpty()) {
-        return "(git command failed: %s, exit %d)".formatted(String.join(" ", command), exitCode);
-      }
-      return output.isEmpty() ? "(no output)" : output;
-    } catch (IOException | InterruptedException e) {
-      Thread.currentThread().interrupt();
-      return "(failed to run git: %s)".formatted(e.getMessage());
-    }
   }
 
   private static String truncate(String text) {
