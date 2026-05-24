@@ -90,7 +90,7 @@ Diffs are truncated at 12,000 characters each so local models stay within contex
 
 ### Step 2: LLM (Jinja prompt)
 
-The prompt is rendered from `src/main/resources/prompts/commit/generate_message.jinja` (Jinjava), then sent to Ollama. Variables: branch, status, diffs, optional hint. See **[TUTORIAL_JINJA.md](TUTORIAL_JINJA.md)** for how templates, `{% if %}`, and `{% include %}` work.
+The prompt is rendered from `src/main/resources/prompts/commit/generate_message.jinja` (Jinjava), then sent to Ollama. Variables: branch, status, diffs, optional hint. See **[TUTORIAL-JINJA.md](TUTORIAL-JINJA.md)** for how templates, `{% if %}`, and `{% include %}` work.
 
 ## Troubleshooting
 
