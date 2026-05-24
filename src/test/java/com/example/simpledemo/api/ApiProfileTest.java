@@ -1,0 +1,25 @@
+package com.example.simpledemo.api;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+@SpringBootTest(
+    properties = {
+      "simple-demo.rag.enabled=false",
+      "simple-demo.vector-memory.enabled=false",
+      "embabel.agent.shell.interactive.enabled=false",
+      "spring.shell.interactive.enabled=false",
+      "spring.shell.noninteractive.enabled=false",
+      "server.port=0"
+    })
+@ActiveProfiles("api")
+class ApiProfileTest {
+
+  @Test
+  void contextLoadsWithApiProfile() {
+    assertTrue(true);
+  }
+}

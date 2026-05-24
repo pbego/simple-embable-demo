@@ -9,6 +9,7 @@ import com.embabel.chat.UserMessage;
 import com.embabel.agent.domain.io.UserInput;
 import com.example.simpledemo.agent.CommitMessage;
 import com.example.simpledemo.agent.CommitMessageAgent;
+import com.example.simpledemo.agent.CommitOrchestratorAgent;
 import com.example.simpledemo.agent.CommitStyleAgent;
 import com.example.simpledemo.agent.GreetingAgent;
 import com.example.simpledemo.agent.JokeAgent;
@@ -37,12 +38,18 @@ public class ChatRouter {
   private static final Logger logger = LoggerFactory.getLogger(ChatRouter.class);
 
   private static final List<RouteTarget> DISPATCH_ORDER =
-      List.of(RouteTarget.COMMIT, RouteTarget.STYLE, RouteTarget.JOKE, RouteTarget.GREETING);
+      List.of(
+          RouteTarget.ORCHESTRATE,
+          RouteTarget.COMMIT,
+          RouteTarget.STYLE,
+          RouteTarget.JOKE,
+          RouteTarget.GREETING);
 
   private final GreetingAgent greetingAgent;
   private final JokeAgent jokeAgent;
   private final CommitMessageAgent commitMessageAgent;
   private final CommitStyleAgent commitStyleAgent;
+  private final CommitOrchestratorAgent commitOrchestratorAgent;
   private final SessionSummaryService sessionSummaryService;
 
   public ChatRouter(
@@ -50,11 +57,13 @@ public class ChatRouter {
       JokeAgent jokeAgent,
       CommitMessageAgent commitMessageAgent,
       CommitStyleAgent commitStyleAgent,
+      CommitOrchestratorAgent commitOrchestratorAgent,
       SessionSummaryService sessionSummaryService) {
     this.greetingAgent = greetingAgent;
     this.jokeAgent = jokeAgent;
     this.commitMessageAgent = commitMessageAgent;
     this.commitStyleAgent = commitStyleAgent;
+    this.commitOrchestratorAgent = commitOrchestratorAgent;
     this.sessionSummaryService = sessionSummaryService;
   }
 
@@ -107,6 +116,7 @@ public class ChatRouter {
     }
     return switch (tag) {
       case "commit", "git", "cm" -> Optional.of(RouteTarget.COMMIT);
+      case "orchestrate", "pipeline" -> Optional.of(RouteTarget.ORCHESTRATE);
       case "style", "rag", "conventions" -> Optional.of(RouteTarget.STYLE);
       case "joke", "jokes", "funny" -> Optional.of(RouteTarget.JOKE);
       case "greet", "greeting", "hello", "hi" -> Optional.of(RouteTarget.GREETING);
@@ -249,6 +259,7 @@ public class ChatRouter {
     return switch (raw.trim().toLowerCase(Locale.ROOT)) {
       case "joke", "jokes", "funny" -> RouteTarget.JOKE;
       case "commit", "git", "cm" -> RouteTarget.COMMIT;
+      case "orchestrate", "pipeline" -> RouteTarget.ORCHESTRATE;
       case "style", "rag", "conventions" -> RouteTarget.STYLE;
       case "greet", "greeting", "hello", "hi" -> RouteTarget.GREETING;
       default -> RouteTarget.GREETING;
@@ -272,6 +283,7 @@ public class ChatRouter {
   private static String sectionLabel(RouteTarget route) {
     return switch (route) {
       case COMMIT -> "**Commit message**";
+      case ORCHESTRATE -> "**Orchestrated commit**";
       case STYLE -> "**Commit style**";
       case JOKE -> "**Joke**";
       case GREETING -> "**Greeting**";
@@ -284,9 +296,29 @@ public class ChatRouter {
       case JOKE -> formatJoke(jokeAgent.tell(new JokeAgent.Request(q), context));
       case COMMIT ->
           formatCommitMessage(commitMessageAgent.answer(new CommitMessageAgent.Request(q), context));
+      case ORCHESTRATE -> orchestrateCommit(q, context);
       case STYLE -> explainCommitStyle(q, context);
       case GREETING -> greetingAgent.greet(new GreetingAgent.Request(q));
     };
+  }
+
+  private String orchestrateCommit(String question, ActionContext context) {
+    var userInput = new UserInput(question);
+    var ctx = commitOrchestratorAgent.collect(userInput);
+    ctx = commitOrchestratorAgent.withSecurityReview(ctx, context.ai());
+    ctx = commitOrchestratorAgent.withChangelog(ctx, context.ai());
+    var proposal = commitOrchestratorAgent.proposeWithContext(ctx, context.ai());
+    var header =
+        """
+        Security: %s
+
+        Changelog:
+        %s
+
+        Proposed commit:
+        """
+            .formatted(ctx.securityReview(), ctx.changelog());
+    return header + proposal.formatted();
   }
 
   private String explainCommitStyle(String question, ActionContext context) {
@@ -322,6 +354,7 @@ public class ChatRouter {
   public record LlmRoutingDecision(String target, List<String> targets, String rationale) {}
 
   enum RouteTarget {
+    ORCHESTRATE,
     COMMIT,
     STYLE,
     JOKE,

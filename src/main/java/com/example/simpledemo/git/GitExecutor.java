@@ -12,10 +12,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class GitExecutor {
 
-  private final Path workTree;
+  private static final java.util.Set<String> READ_ONLY_SUBCOMMANDS =
+      java.util.Set.of(
+          "branch", "diff", "log", "rev-parse", "status", "show", "describe", "remote");
 
-  public GitExecutor(@Value("${simple-demo.git.work-tree:.}") String workTreePath) {
+  private final Path workTree;
+  private final boolean readOnly;
+
+  public GitExecutor(
+      @Value("${simple-demo.git.work-tree:.}") String workTreePath,
+      @Value("${simple-demo.git.read-only:true}") boolean readOnly) {
     this.workTree = Path.of(workTreePath).toAbsolutePath().normalize();
+    this.readOnly = readOnly;
   }
 
   public Path workTree() {
@@ -23,6 +31,9 @@ public class GitExecutor {
   }
 
   public String runGit(String... args) {
+    if (readOnly && args.length > 0 && !READ_ONLY_SUBCOMMANDS.contains(args[0])) {
+      return "(blocked: read-only git mode disallows '%s')".formatted(args[0]);
+    }
     var command = new String[args.length + 1];
     command[0] = "git";
     System.arraycopy(args, 0, command, 1, args.length);

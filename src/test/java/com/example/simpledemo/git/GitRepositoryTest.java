@@ -26,7 +26,7 @@ class GitRepositoryTest {
     runInRepo("add", "README.md");
     runInRepo("commit", "-m", "Initial commit");
 
-    repository = new GitRepository(new GitExecutor(workTree.toString()));
+    repository = new GitRepository(new GitExecutor(workTree.toString(), false));
   }
 
   @Test

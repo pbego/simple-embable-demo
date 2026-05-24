@@ -16,7 +16,7 @@ class GitInfoAgentTest {
 
   @Test
   void answerAboutRepoPassesGitToolsToLlm() {
-    var agent = new GitInfoAgent(new GitExecutor(workTree.toString()));
+    var agent = new GitInfoAgent(new GitExecutor(workTree.toString(), false));
     var context = FakeOperationContext.create();
     context.expectResponse("No commits yet.");
 

@@ -1,0 +1,25 @@
+name: suggest-commit
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  suggest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Build
+        run: ./mvnw -q -DskipTests package
+      - name: Suggest commit (mock mode)
+        env:
+          SPRING_MAIN_WEB_APPLICATION_TYPE: none
+          EMBABEL_AGENT_PLATFORM_TEST_MOCK_MODE: "true"
+          SIMPLE_DEMO_RAG_ENABLED: "false"
+          SIMPLE_DEMO_VECTOR_MEMORY_ENABLED: "false"
+        run: |
+          java -jar target/simple-demo-*.jar commit-now "CI smoke: summarize staged changes" || true

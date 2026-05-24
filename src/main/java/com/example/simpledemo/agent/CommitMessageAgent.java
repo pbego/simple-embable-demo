@@ -7,6 +7,11 @@ import com.embabel.agent.api.annotation.Export;
 import com.embabel.agent.api.common.ActionContext;
 import com.embabel.agent.api.common.Ai;
 import com.embabel.agent.domain.io.UserInput;
+import com.example.simpledemo.domain.CommitProposal;
+import com.example.simpledemo.domain.CommitRequest;
+import com.example.simpledemo.domain.RepositorySnapshot;
+import com.example.simpledemo.domain.SimilarCommitsContext;
+import com.example.simpledemo.domain.StyleGuideContext;
 import com.example.simpledemo.git.GitChangesCollector;
 import com.example.simpledemo.memory.CommitVectorMemory;
 import com.example.simpledemo.rag.CommitStyleRetriever;
@@ -57,31 +62,61 @@ public class CommitMessageAgent {
     return gitChangesCollector.collect(userInput.getContent());
   }
 
+  @Action
+  public RepositorySnapshot captureRepository(UserInput userInput) {
+    return RepositorySnapshot.from(collectChanges(userInput));
+  }
+
+  @Action
+  public StyleGuideContext loadStyleGuide(RepositorySnapshot snapshot) {
+    return new StyleGuideContext(commitStyleRetriever.retrieveStyleGuide(snapshot.toGitChanges()));
+  }
+
+  @Action
+  public SimilarCommitsContext loadSimilarCommits(RepositorySnapshot snapshot) {
+    var query = snapshot.status() + "\n" + snapshot.stagedDiff();
+    return new SimilarCommitsContext(commitVectorMemory.recallSimilar(query));
+  }
+
   @AchievesGoal(description = "Propose a commit message for the current changes")
   @Action
   @Export(remote = true)
   public CommitMessage generateCommitMessage(GitChanges changes, UserInput userInput, Ai ai) {
-    var rawHint = changes.userHint().isBlank() ? userInput.getContent() : changes.userHint();
-    var developerHint = rawHint == null ? "" : rawHint.trim();
+    var snapshot = RepositorySnapshot.from(changes);
+    var request =
+        new CommitRequest(
+            changes.userHint().isBlank() ? userInput.getContent() : changes.userHint());
+    return proposeCommit(
+            snapshot,
+            request,
+            loadStyleGuide(snapshot),
+            loadSimilarCommits(snapshot),
+            ai)
+        .toCommitMessage();
+  }
 
-    var styleGuide = commitStyleRetriever.retrieveStyleGuide(changes);
-    var pastCommits = commitVectorMemory.recallSimilar(changes.status() + "\n" + changes.stagedDiff());
-
+  @Action
+  public CommitProposal proposeCommit(
+      RepositorySnapshot snapshot,
+      CommitRequest request,
+      StyleGuideContext styleGuide,
+      SimilarCommitsContext similarCommits,
+      Ai ai) {
     var model = new HashMap<String, Object>();
-    model.put("branch", changes.branch());
-    model.put("status", JinjavaSafe.escape(changes.status()));
-    model.put("changeSections", buildChangeSections(changes));
-    model.put("developerSection", buildDeveloperSection(developerHint));
-    model.put("styleGuideSection", buildStyleGuideSection(styleGuide));
-    model.put("pastCommitsSection", buildPastCommitsSection(pastCommits));
+    model.put("branch", snapshot.branch());
+    model.put("status", JinjavaSafe.escape(snapshot.status()));
+    model.put("changeSections", buildChangeSections(snapshot.toGitChanges()));
+    model.put("developerSection", buildDeveloperSection(request.hint()));
+    model.put("styleGuideSection", buildStyleGuideSection(styleGuide.content()));
+    model.put("pastCommitsSection", buildPastCommitsSection(similarCommits.content()));
 
     var commit =
         ai.withDefaultLlm()
             .rendering(COMMIT_MESSAGE_TEMPLATE)
             .createObject(CommitMessage.class, model);
 
-    commitVectorMemory.remember(commit, changes.branch());
-    return commit;
+    commitVectorMemory.remember(commit, snapshot.branch());
+    return CommitProposal.from(commit);
   }
 
   private static String buildChangeSections(GitChanges changes) {

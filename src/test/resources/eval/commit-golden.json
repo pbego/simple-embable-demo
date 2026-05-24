@@ -1,0 +1,12 @@
+[
+  {
+    "status": " M src/Foo.java",
+    "stagedDiff": "diff --git a/src/Foo.java\n+  throw new IllegalStateException();",
+    "expectedSubjectPattern": "^fix:.*"
+  },
+  {
+    "status": "A  docs/guide.md",
+    "stagedDiff": "diff --git a/docs/guide.md\n+New tutorial section",
+    "expectedSubjectPattern": "^docs:.*"
+  }
+]

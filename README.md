@@ -1,34 +1,24 @@
 # simple-demo
 
-Minimal Embabel examples: **orchestrator** (`x`) vs **chat** (`chat` + router), with local Ollama.
+Minimal Embabel examples on **`feat/all_together`**: orchestrator (`x`), chat with router, RAG, vector memory, MCP, REST, and multi-agent commit flows — all in one branch.
 
-The **`main`** branch is the baseline. Each **`feat/*`** branch adds one topic; the hands-on guide is a **`TUTORIAL-*.md` file on that branch**.
+See **[TUTORIAL-INDEX.md](TUTORIAL-INDEX.md)** for the full topic list (tutorials 1–29). For how that maps to the official guide, see **[docs/GUIDE_COVERAGE.md](docs/GUIDE_COVERAGE.md)**.
 
-## Testing this branch (feat/tier4-mcp)
-
-**Full tier‑4 stack:** Lucene RAG, vector memory of past commits, **MCP consume** (filesystem tools), and **MCP publish** (expose agents over SSE). This branch is the capstone — read **[TUTORIAL-MCP.md](TUTORIAL-MCP.md)** for MCP concepts and profiles.
-
-| Topic | Tutorial |
-|-------|----------|
-| Lucene RAG | [TUTORIAL-RAG.md](TUTORIAL-RAG.md) |
-| Vector memory | [TUTORIAL-VECTOR-MEMORY.md](TUTORIAL-VECTOR-MEMORY.md) |
-| **MCP consume & publish** | **[TUTORIAL-MCP.md](TUTORIAL-MCP.md)** ← focus here |
-
-### Prerequisites
+## Prerequisites
 
 | Requirement | Notes |
 |-------------|--------|
 | Java 21, Maven | `./mvnw` |
-| Ollama | `http://localhost:11434` |
+| [Ollama](https://ollama.com/) | `http://localhost:11434` |
 | Chat LLM | `ollama pull gemma4:e4b` |
-| Embeddings | `ollama pull nomic-embed-text` — tag must match `ollama list` (often `nomic-embed-text:latest`) |
+| Embeddings | `ollama pull nomic-embed-text` (for RAG + vector memory) |
 | Git | Commit-message examples |
-| **`npx`** | Only for **`mcp` profile** (filesystem MCP server via stdio) |
-| **Port 8081** | Only for **`mcp-server` profile** (SSE MCP server) |
+| `npx` | Only for `mcp` profile |
 
-### Mode 1 — Default shell (RAG + vector memory, no MCP)
+## Quick start (default profile)
 
 ```bash
+git checkout feat/all_together
 ./mvnw spring-boot:run
 ```
 
@@ -36,67 +26,59 @@ The **`main`** branch is the baseline. Each **`feat/*`** branch adds one topic; 
 embabel> help
 embabel> rag-index
 embabel> x "generate a commit message for my current changes"
+embabel> chat
+chat:> @commit focus on router changes
+chat:> @orchestrate full pipeline for my staged files
+chat:> exit
+embabel> conversations
+embabel> resume-chat <id>
+embabel> commit-now "DOC-2: document REST API"
 ```
 
-### Mode 2 — Consume MCP tools (`mcp` profile)
+## Shell vs chat
 
-Starts the app **and** a filesystem MCP server (via `npx`) so agents can read allowed paths under your home directory.
+| Command | Demonstrates |
+|---------|----------------|
+| **`x "..."`** | Autonomy picks an `@Agent`; planner runs `@Action` steps |
+| **`chat`** | `ChatRouter` → specialists (`@commit`, `@style`, `@joke`, `@greet`, `@orchestrate`) |
+| **`commit-now`** | `AgentInvocation` without chat (CI-friendly) |
+
+## Profiles
+
+| Profile | Command | Purpose |
+|---------|---------|---------|
+| *(default)* | `./mvnw spring-boot:run` | Shell + RAG + vector memory + file chat |
+| `mcp` | `SPRING_PROFILES_ACTIVE=mcp ./mvnw spring-boot:run` | Filesystem MCP tools |
+| `mcp-server` | `SPRING_PROFILES_ACTIVE=mcp-server ./mvnw spring-boot:run` | SSE MCP server on :8081 |
+| `api` | `SPRING_PROFILES_ACTIVE=api ./mvnw spring-boot:run` | REST `POST /api/demo/commit` + platform SSE |
+
+## Tests
 
 ```bash
-SPRING_PROFILES_ACTIVE=mcp ./mvnw spring-boot:run
+./mvnw test
 ```
 
-```text
-embabel> x "read docs/COMMIT_CONVENTIONS.md and summarize our commit rules"
-```
-
-Autonomy should pick **`McpFilesystemAgent`**, which calls the LLM with `withToolGroup("filesystem")`.
-
-### Mode 3 — Publish agents as MCP server (`mcp-server` profile)
-
-HTTP server on **8081**; Embabel shell is disabled. Remote clients (e.g. Cursor) call exported commit goals over SSE.
-
-```bash
-SPRING_PROFILES_ACTIVE=mcp-server ./mvnw spring-boot:run
-```
-
-| Setting | Value |
-|---------|--------|
-| SSE endpoint | `http://localhost:8081/sse` |
-| Exported goals | `CommitMessageAgent.generateCommitMessage`, `CommitStyleAgent.explainCommitStyle` (`@Export(remote = true)`) |
-
-### Chat routing
-
-```text
-chat
-chat:> hello
-chat:> @commit focus on the router changes
-chat:> @style how do we format commits?
-chat:> @joke kubernetes
-```
-
-`ChatRouter` uses explicit `@commit` / `@style` / `@joke` / `@greet` prefixes or an LLM router for natural language (including multi-agent replies in one turn).
+No Ollama required for unit tests (RAG/vector memory disabled in test config).
 
 ## Layout
 
 ```
 src/main/java/com/example/simpledemo/
-├── agent/
-│   ├── CommitMessageAgent.java      # @Export(remote) for MCP server
-│   ├── CommitStyleAgent.java
-│   ├── McpFilesystemAgent.java      # @Profile("mcp")
-│   └── …
-├── config/
-│   ├── DemoMcpToolGroupsConfiguration.java
-│   ├── McpServerEnableConfiguration.java
-│   ├── RagConfiguration.java
-│   └── VectorMemoryConfiguration.java
-└── shell/RagShellCommands.java
+├── agent/          # Commit, style, joke, git tools, orchestrator, security, changelog
+├── api/            # REST (api profile)
+├── chat/           # ChatRouter, summarization
+├── config/         # RAG, vector memory, MCP, chat, guardrails
+├── domain/         # Typed DICE-style records
+├── git/            # GitExecutor, GitRepository
+├── invocation/     # CommitInvocationRunner
+├── memory/         # File conversations, vector memory
+├── rag/            # Lucene index
+├── security/       # CommitSafetyGuardRail
+└── shell/          # rag-index, conversations, commit-now
 ```
 
 ## Docs
 
-- **[TUTORIAL-MCP.md](TUTORIAL-MCP.md)** — MCP consume/publish (this branch)
-- [TUTORIAL-RAG.md](TUTORIAL-RAG.md) · [TUTORIAL-VECTOR-MEMORY.md](TUTORIAL-VECTOR-MEMORY.md)
-- [TUTORIAL.md](TUTORIAL.md) — baseline shell / chat
+- [TUTORIAL-INDEX.md](TUTORIAL-INDEX.md) — all tutorials
+- [docs/COMMIT_CONVENTIONS.md](docs/COMMIT_CONVENTIONS.md) — RAG corpus
 - [Embabel guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)
