@@ -4,6 +4,7 @@ import com.embabel.agent.api.annotation.AchievesGoal;
 import com.embabel.agent.api.annotation.Action;
 import com.embabel.agent.api.annotation.Agent;
 import com.embabel.agent.api.annotation.Export;
+import com.embabel.agent.api.common.ActionContext;
 import com.embabel.agent.api.common.Ai;
 import com.embabel.agent.domain.io.UserInput;
 import com.example.simpledemo.git.GitChangesCollector;
@@ -11,7 +12,6 @@ import com.example.simpledemo.memory.CommitVectorMemory;
 import com.example.simpledemo.rag.CommitStyleRetriever;
 import com.example.simpledemo.template.JinjavaSafe;
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Inspects git changes on the current branch (via {@link GitChangesCollector}) and
@@ -25,6 +25,8 @@ public class CommitMessageAgent {
   private static final String COMMIT_MESSAGE_TEMPLATE = "commit/generate_message";
   private static final String NO_GIT_OUTPUT = "(no output)";
 
+  public record Request(String question) {}
+
   private final GitChangesCollector gitChangesCollector;
   private final CommitStyleRetriever commitStyleRetriever;
   private final CommitVectorMemory commitVectorMemory;
@@ -36,6 +38,18 @@ public class CommitMessageAgent {
     this.gitChangesCollector = gitChangesCollector;
     this.commitStyleRetriever = commitStyleRetriever;
     this.commitVectorMemory = commitVectorMemory;
+  }
+
+  /**
+   * Single-shot entry for chat routing. The {@code x} command can still use the two-step planner
+   * path ({@link #collectChanges} → {@link #generateCommitMessage}).
+   */
+  @Action(canRerun = true, description = "Suggest a commit message from current git changes")
+  public CommitMessage answer(Request request, ActionContext context) {
+    var userInput =
+        new UserInput(request != null && request.question() != null ? request.question() : "");
+    var changes = collectChanges(userInput);
+    return generateCommitMessage(changes, userInput, context.ai());
   }
 
   @Action

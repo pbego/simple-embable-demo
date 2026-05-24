@@ -3,6 +3,7 @@ package com.example.simpledemo.agent;
 import com.embabel.agent.api.annotation.AchievesGoal;
 import com.embabel.agent.api.annotation.Action;
 import com.embabel.agent.api.annotation.Agent;
+import com.embabel.agent.api.common.ActionContext;
 import com.embabel.agent.api.common.Ai;
 
 /**
@@ -16,7 +17,11 @@ public class JokeAgent {
 
   @Action(canRerun = true, description = "Tell a one-liner joke")
   @AchievesGoal(description = "Entertain the user with a joke")
-  public JokeResult tell(Request request, Ai ai) {
+  public JokeResult tell(Request request, ActionContext context) {
+    return tell(request, context.ai());
+  }
+
+  private JokeResult tell(Request request, Ai ai) {
     var topic = request != null && request.topic() != null ? request.topic() : "programming";
     return ai.withDefaultLlm()
         .createObject(
