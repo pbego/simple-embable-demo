@@ -17,12 +17,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class CommitStyleRetriever {
 
-  private final LuceneSearchOperations searchOperations;
+  private final ObjectProvider<LuceneSearchOperations> searchOperations;
   private final RagProperties properties;
 
   public CommitStyleRetriever(
       ObjectProvider<LuceneSearchOperations> searchOperations, RagProperties properties) {
-    this.searchOperations = searchOperations.getIfAvailable();
+    this.searchOperations = searchOperations;
     this.properties = properties;
   }
 
@@ -35,13 +35,14 @@ public class CommitStyleRetriever {
   }
 
   public List<SimilarityResult<Chunk>> search(String query) {
-    if (searchOperations == null) {
+    var store = searchOperations.getIfAvailable();
+    if (store == null) {
       return List.of();
     }
     var request =
         TextSimilaritySearchRequest.create(
             query, properties.similarityThreshold(), properties.retrievalTopK());
-    return searchOperations.vectorSearch(request, Chunk.class);
+    return store.vectorSearch(request, Chunk.class);
   }
 
   private static String changesQuery(GitChanges changes) {

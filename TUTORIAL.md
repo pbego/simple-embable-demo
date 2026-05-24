@@ -41,6 +41,10 @@ Configure via `DemoChatConfiguration`: `AgentProcessChatbot.utilityFromPlatform(
 | `@Agent` workers | `Support`, `Insights`, `Rca`, … |
 | `x` multi-step | RCA workflows, `CommitMessageAgent`-style chains |
 
+## Tier 4 on this branch (`feat/tier4-vector-memory`)
+
+Includes **Lucene RAG** ([TUTORIAL-RAG.md](TUTORIAL-RAG.md)) and **vector memory** of past commit suggestions ([TUTORIAL-VECTOR-MEMORY.md](TUTORIAL-VECTOR-MEMORY.md)). Run `rag-index` once, then `x` for commit messages twice to see memory recall. Not on `main` alone.
+
 ## Prerequisites
 
 | Requirement | Notes |
@@ -48,6 +52,7 @@ Configure via `DemoChatConfiguration`: `AgentProcessChatbot.utilityFromPlatform(
 | Java 21 | `pom.xml` |
 | Maven | `./mvnw` |
 | Ollama | `http://localhost:11434`, model `gemma4:e4b` |
+| Ollama embeddings | **`feat/tier4-rag` / vector-memory:** `nomic-embed-text` |
 | Git | Only for commit `x` examples |
 
 ## Configuration
@@ -104,5 +109,8 @@ Includes `ChatRouterTest` (routing keywords only).
 
 ## Further reading
 
+- [TUTORIAL-RAG.md](TUTORIAL-RAG.md) — Lucene RAG (`feat/tier4-rag` and this branch)
+- [TUTORIAL-VECTOR-MEMORY.md](TUTORIAL-VECTOR-MEMORY.md) — past commit recall (`feat/tier4-vector-memory`)
+- [README.md](README.md) — how to test the current branch
 - [Embabel User Guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)
 - [iax-app-ai docs/embabel-flow.md](https://github.com/ITRS-Group/iax-app-ai/blob/dev/docs/embabel-flow.md) (production routing)

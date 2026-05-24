@@ -27,5 +27,5 @@ import org.springframework.context.annotation.Profile;
 @Profile("spring-ai-memory")
 @ConditionalOnProperty(name = "simple-demo.vector-memory.enabled", havingValue = "true")
 public class SpringAiVectorMemoryConfiguration {
-  // Intentionally empty: see class Javadoc and TUTORIAL-TIER4.md §20.
+  // Intentionally empty: see class Javadoc and TUTORIAL-VECTOR-MEMORY.md.
 }
