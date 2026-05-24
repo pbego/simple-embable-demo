@@ -1,0 +1,23 @@
+You are helping a developer write a git commit message.
+
+{% include "commit/_conventional_rules.jinja" %}
+
+{{ styleGuideSection }}
+
+{{ pastCommitsSection }}
+
+Current branch: {{ branch }}
+
+## git status --short
+{{ status }}
+
+{{ changeSections }}
+
+{{ developerSection }}
+
+If there are no meaningful changes, set subject to "chore: no changes to commit"
+and body to a short explanation.
+
+Write a complete commit body (at least 2-3 sentences or bullet points when changes are non-trivial).
+
+Return JSON with fields: subject (string), body (string, may be empty).
