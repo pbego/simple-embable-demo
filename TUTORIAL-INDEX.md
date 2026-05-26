@@ -2,7 +2,7 @@
 
 All topics below live on **`feat/all_together`**. Start with [README.md](README.md), then open the tutorial for each topic.
 
-**Guide alignment:** [docs/GUIDE_COVERAGE.md](docs/GUIDE_COVERAGE.md) maps these tutorials to the [official Embabel guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/) (see [docs/EMBABEL_AGENT_GUIDE_TOPICS.md](docs/EMBABEL_AGENT_GUIDE_TOPICS.md) for topic summaries).
+**Guide alignment:** [docs/GUIDE_COVERAGE.md](docs/GUIDE_COVERAGE.md) maps tutorials to the [Embabel guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/) ([topic index](docs/EMBABEL_AGENT_GUIDE_TOPICS.md)). [docs/SPRING_AI_GUIDE_COVERAGE.md](docs/SPRING_AI_GUIDE_COVERAGE.md) maps the same tutorials to the [Spring AI reference](https://docs.spring.io/spring-ai/reference/index.html) ([topic index](docs/SPRING_AI_REFERENCE_TOPICS.md)). **Stack overview:** [docs/EMBABEL_AND_SPRING_AI.md](docs/EMBABEL_AND_SPRING_AI.md).
 
 | # | Topic | Tutorial |
 |---|--------|----------|

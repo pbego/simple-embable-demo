@@ -2,6 +2,8 @@
 
 This matrix maps [EMBABEL_AGENT_GUIDE_TOPICS.md](EMBABEL_AGENT_GUIDE_TOPICS.md) (summaries of the [official guide 0.5.0-SNAPSHOT](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/)) to what **simple-demo** on **`feat/all_together`** actually demonstrates.
 
+**Spring AI reference coverage:** [SPRING_AI_GUIDE_COVERAGE.md](SPRING_AI_GUIDE_COVERAGE.md) · **How Embabel uses Spring AI:** [EMBABEL_AND_SPRING_AI.md](EMBABEL_AND_SPRING_AI.md)
+
 | Status | Meaning |
 |--------|---------|
 | **Covered** | Runnable code and/or a dedicated tutorial |
@@ -209,4 +211,4 @@ Bumping `embabel-agent.version` to **0.5.x** is the main unlock for guide topics
 
 ---
 
-See also: [EMBABEL_AGENT_GUIDE_TOPICS.md](EMBABEL_AGENT_GUIDE_TOPICS.md) · [TUTORIAL-INDEX.md](../TUTORIAL-INDEX.md)
+See also: [EMBABEL_AGENT_GUIDE_TOPICS.md](EMBABEL_AGENT_GUIDE_TOPICS.md) · [SPRING_AI_REFERENCE_TOPICS.md](SPRING_AI_REFERENCE_TOPICS.md) · [SPRING_AI_GUIDE_COVERAGE.md](SPRING_AI_GUIDE_COVERAGE.md) · [EMBABEL_AND_SPRING_AI.md](EMBABEL_AND_SPRING_AI.md) · [TUTORIAL-INDEX.md](../TUTORIAL-INDEX.md)

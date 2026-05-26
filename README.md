@@ -2,7 +2,7 @@
 
 Minimal Embabel examples on **`feat/all_together`**: orchestrator (`x`), chat with router, RAG, vector memory, MCP, REST, and multi-agent commit flows — all in one branch.
 
-See **[TUTORIAL-INDEX.md](TUTORIAL-INDEX.md)** for the full topic list (tutorials 1–29). For how that maps to the official guide, see **[docs/GUIDE_COVERAGE.md](docs/GUIDE_COVERAGE.md)**.
+See **[TUTORIAL-INDEX.md](TUTORIAL-INDEX.md)** for the full topic list (tutorials 1–29). Guide coverage: **[Embabel](docs/GUIDE_COVERAGE.md)** · **[Spring AI](docs/SPRING_AI_GUIDE_COVERAGE.md)** · **[how they fit together](docs/EMBABEL_AND_SPRING_AI.md)**.
 
 ## Prerequisites
 
