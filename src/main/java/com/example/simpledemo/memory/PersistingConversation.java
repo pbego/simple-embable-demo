@@ -16,15 +16,15 @@ import java.util.List;
 public class PersistingConversation implements Conversation, ConversationMemoryAccessor {
 
   private final Conversation delegate;
-  private final FileConversationStore store;
+  private final ConversationStore store;
   private ConversationMemoryState memoryState;
 
-  public PersistingConversation(Conversation delegate, FileConversationStore store) {
+  public PersistingConversation(Conversation delegate, ConversationStore store) {
     this(delegate, store, ConversationMemoryState.empty());
   }
 
   public PersistingConversation(
-      Conversation delegate, FileConversationStore store, ConversationMemoryState memoryState) {
+      Conversation delegate, ConversationStore store, ConversationMemoryState memoryState) {
     this.delegate = delegate;
     this.store = store;
     this.memoryState = memoryState != null ? memoryState : ConversationMemoryState.empty();

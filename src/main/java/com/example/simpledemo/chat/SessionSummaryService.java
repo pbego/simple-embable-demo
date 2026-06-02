@@ -7,6 +7,7 @@ import com.embabel.chat.UserMessage;
 import com.example.simpledemo.memory.ConversationMemoryAccessor;
 import com.example.simpledemo.memory.ConversationMemoryState;
 import com.example.simpledemo.memory.ConversationMemoryProperties;
+import com.example.simpledemo.audit.AuditRecorder;
 import com.example.simpledemo.memory.ConversationSummarizationPlanner;
 import com.example.simpledemo.memory.ConversationSummarizationPlanner.SummarizationSlice;
 import java.util.List;
@@ -32,9 +33,12 @@ public class SessionSummaryService {
           .strip();
 
   private final ConversationMemoryProperties properties;
+  private final AuditRecorder auditRecorder;
 
-  public SessionSummaryService(ConversationMemoryProperties properties) {
+  public SessionSummaryService(
+      ConversationMemoryProperties properties, AuditRecorder auditRecorder) {
     this.properties = properties;
+    this.auditRecorder = auditRecorder;
   }
 
   /**
@@ -62,8 +66,11 @@ public class SessionSummaryService {
     var prompt = SUMMARIZE_PROMPT.formatted(existing != null ? existing : "(none)", transcript);
     var summary =
         context.ai().withDefaultLlm().createObject(List.of(new UserMessage(prompt)), String.class);
+    var updated = summary.strip();
     accessor.updateMemoryState(
-        new ConversationMemoryState(summary.strip(), slice.newSummarizedThroughIndex()));
+        new ConversationMemoryState(updated, slice.newSummarizedThroughIndex()));
+    auditRecorder.summaryUpdated(
+        conversation.getId(), slice.newSummarizedThroughIndex(), updated);
   }
 
   private static String formatTranscript(List<Message> messages) {

@@ -5,8 +5,8 @@ import com.embabel.agent.shell.TerminalServices;
 import com.embabel.agent.spi.logging.ColorPalette;
 import com.embabel.chat.Chatbot;
 import com.embabel.chat.ChatSession;
+import com.example.simpledemo.memory.ConversationStore;
 import com.example.simpledemo.memory.ConversationSummary;
-import com.example.simpledemo.memory.FileConversationStore;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
@@ -29,14 +29,14 @@ public class ConversationShellCommands {
   private final Chatbot chatbot;
   private final AgentPlatform agentPlatform;
   private final TerminalServices terminalServices;
-  private final FileConversationStore store;
+  private final ConversationStore store;
   private final ColorPalette colorPalette;
 
   public ConversationShellCommands(
       Chatbot chatbot,
       AgentPlatform agentPlatform,
       TerminalServices terminalServices,
-      FileConversationStore store,
+      ConversationStore store,
       ColorPalette colorPalette) {
     this.chatbot = chatbot;
     this.agentPlatform = agentPlatform;
@@ -49,14 +49,14 @@ public class ConversationShellCommands {
   public String conversations() {
     var summaries = store.list();
     if (summaries.isEmpty()) {
-      return "No saved conversations in " + store.conversationsDir();
+      return "No saved conversations in " + store.storageDescription();
     }
     var header = String.format("%-10s  %-16s  %s", "ID", "UPDATED", "PREVIEW");
     var rows =
         summaries.stream()
             .map(this::formatRow)
             .collect(Collectors.joining("\n"));
-    return header + "\n" + rows + "\n\nDirectory: " + store.conversationsDir();
+    return header + "\n" + rows + "\n\nStorage: " + store.storageDescription();
   }
 
   @ShellMethod(
@@ -80,8 +80,8 @@ public class ConversationShellCommands {
             + conversationId
             + " ("
             + session.getConversation().getMessages().size()
-            + " messages). Saved under "
-            + store.conversationsDir()
+            + " messages). Storage: "
+            + store.storageDescription()
             + ".";
 
     return terminalServices.chat(session, welcome, colorPalette);

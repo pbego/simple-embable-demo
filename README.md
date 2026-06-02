@@ -15,12 +15,20 @@ See **[TUTORIAL-INDEX.md](TUTORIAL-INDEX.md)** for the full topic list (tutorial
 | Git | Commit-message examples |
 | `npx` | Only for `mcp` profile |
 
-## Quick start (default profile)
+## Quick start (default profile — file-backed chat)
 
 ```bash
-git checkout feat/all_together
 ./mvnw spring-boot:run
 ```
+
+### Chat history on PostgreSQL (Docker)
+
+```bash
+docker compose up -d
+./mvnw spring-boot:run -Dspring-boot.run.profiles=postgres
+```
+
+Database: `simple_demo` on `localhost:5432` (user/password `simple_demo`). See [TUTORIAL-AUDIT.md](TUTORIAL-AUDIT.md).
 
 ```text
 embabel> help
@@ -32,6 +40,7 @@ chat:> @orchestrate full pipeline for my staged files
 chat:> exit
 embabel> conversations
 embabel> resume-chat <id>
+embabel> audit-tail <id>          # postgres profile only
 embabel> commit-now "DOC-2: document REST API"
 ```
 
@@ -47,7 +56,8 @@ embabel> commit-now "DOC-2: document REST API"
 
 | Profile | Command | Purpose |
 |---------|---------|---------|
-| *(default)* | `./mvnw spring-boot:run` | Shell + RAG + vector memory + file chat |
+| *(default)* / `file` | `./mvnw spring-boot:run` | Shell + RAG + vector memory + JSON chat history |
+| `postgres` | `docker compose up -d` then `SPRING_PROFILES_ACTIVE=postgres ./mvnw spring-boot:run` | Same + PostgreSQL transcripts and audit |
 | `mcp` | `SPRING_PROFILES_ACTIVE=mcp ./mvnw spring-boot:run` | Filesystem MCP tools |
 | `mcp-server` | `SPRING_PROFILES_ACTIVE=mcp-server ./mvnw spring-boot:run` | SSE MCP server on :8081 |
 | `api` | `SPRING_PROFILES_ACTIVE=api ./mvnw spring-boot:run` | REST `POST /api/demo/commit` + platform SSE |
@@ -71,7 +81,8 @@ src/main/java/com/example/simpledemo/
 ├── domain/         # Typed DICE-style records
 ├── git/            # GitExecutor, GitRepository
 ├── invocation/     # CommitInvocationRunner
-├── memory/         # File conversations, vector memory
+├── memory/         # Conversation store (file or Postgres), vector memory
+├── audit/          # Audit events (postgres profile)
 ├── rag/            # Lucene index
 ├── security/       # CommitSafetyGuardRail
 └── shell/          # rag-index, conversations, commit-now

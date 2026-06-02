@@ -15,7 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
       "spring.shell.noninteractive.enabled=false",
       "server.port=0"
     })
-@ActiveProfiles("api")
+@ActiveProfiles({"api", "file"})
 class ApiProfileTest {
 
   @Test

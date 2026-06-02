@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: simple_demo
+      POSTGRES_USER: simple_demo
+      POSTGRES_PASSWORD: simple_demo
+    ports:
+      - "5432:5432"
+    volumes:
+      - simple-demo-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U simple_demo -d simple_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  simple-demo-pgdata:

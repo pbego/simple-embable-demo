@@ -10,6 +10,8 @@ import com.embabel.chat.UserMessage;
 import com.embabel.chat.support.InMemoryConversation;
 import com.example.simpledemo.memory.ConversationMemoryProperties;
 import com.example.simpledemo.memory.ConversationMemoryState;
+import com.example.simpledemo.audit.AuditRecorder;
+import com.example.simpledemo.audit.NoOpAuditRepository;
 import com.example.simpledemo.memory.FileConversationStore;
 import com.example.simpledemo.memory.PersistingConversation;
 import java.nio.file.Path;
@@ -24,7 +26,7 @@ class SessionSummaryServiceTest {
   @Test
   void skipsWhenWithinWindow() {
     var properties = new ConversationMemoryProperties(tempDir.toString(), 20, true);
-    var service = new SessionSummaryService(properties);
+    var service = new SessionSummaryService(properties, new AuditRecorder(new NoOpAuditRepository()));
     var store = new FileConversationStore(properties);
     var conversation =
         new PersistingConversation(new InMemoryConversation(java.util.List.of(), "c1", true), store);
@@ -40,7 +42,7 @@ class SessionSummaryServiceTest {
   @Test
   void summarizesDroppedMessagesAndPersists() {
     var properties = new ConversationMemoryProperties(tempDir.toString(), 2, true);
-    var service = new SessionSummaryService(properties);
+    var service = new SessionSummaryService(properties, new AuditRecorder(new NoOpAuditRepository()));
     var store = new FileConversationStore(properties);
     var messages = new ArrayList<Message>();
     messages.add(new UserMessage("topic: conventional commits"));
@@ -69,7 +71,7 @@ class SessionSummaryServiceTest {
   @Test
   void disabledByProperty() {
     var properties = new ConversationMemoryProperties(tempDir.toString(), 2, false);
-    var service = new SessionSummaryService(properties);
+    var service = new SessionSummaryService(properties, new AuditRecorder(new NoOpAuditRepository()));
     var store = new FileConversationStore(properties);
     var messages = new ArrayList<Message>();
     messages.add(new UserMessage("a"));

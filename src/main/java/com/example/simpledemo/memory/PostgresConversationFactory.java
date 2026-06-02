@@ -8,16 +8,13 @@ import java.util.UUID;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-/**
- * {@link ConversationFactory} that persists conversations as JSON files and supports {@link #load}.
- */
 @Component
-@Profile("file")
-public class FileConversationFactory implements ConversationFactory {
+@Profile("postgres")
+public class PostgresConversationFactory implements ConversationFactory {
 
-  private final FileConversationStore store;
+  private final PostgresConversationStore store;
 
-  public FileConversationFactory(FileConversationStore store) {
+  public PostgresConversationFactory(PostgresConversationStore store) {
     this.store = store;
   }
 
@@ -41,7 +38,6 @@ public class FileConversationFactory implements ConversationFactory {
     return store.load(id).orElse(null);
   }
 
-  /** Create a new conversation with a generated id. */
   public Conversation createNew() {
     return create(UUID.randomUUID().toString().substring(0, 8));
   }

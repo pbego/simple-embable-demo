@@ -4,6 +4,7 @@ import com.embabel.agent.api.invocation.AgentInvocation;
 import com.embabel.agent.core.AgentPlatform;
 import com.embabel.agent.domain.io.UserInput;
 import com.example.simpledemo.agent.CommitMessage;
+import com.example.simpledemo.audit.AuditRecorder;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Profile;
@@ -18,9 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class CommitProcessController {
 
   private final AgentPlatform agentPlatform;
+  private final AuditRecorder auditRecorder;
 
-  public CommitProcessController(AgentPlatform agentPlatform) {
+  public CommitProcessController(AgentPlatform agentPlatform, AuditRecorder auditRecorder) {
     this.agentPlatform = agentPlatform;
+    this.auditRecorder = auditRecorder;
   }
 
   @PostMapping("/commit")
@@ -30,6 +33,8 @@ public class CommitProcessController {
         AgentInvocation.create(agentPlatform, CommitMessage.class)
             .runAsync(new UserInput(hint))
             .get(2, TimeUnit.MINUTES);
+
+    auditRecorder.processLinked(process.getId(), hint);
 
     return Map.of(
         "processId",

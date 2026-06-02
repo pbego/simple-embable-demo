@@ -6,6 +6,7 @@ import com.embabel.chat.UserMessage;
 import com.embabel.common.core.validation.ValidationError;
 import com.embabel.common.core.validation.ValidationResult;
 import com.embabel.common.core.validation.ValidationSeverity;
+import com.example.simpledemo.audit.AuditRecorder;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -16,6 +17,12 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class CommitSafetyGuardRail implements UserInputGuardRail {
+
+  private final AuditRecorder auditRecorder;
+
+  public CommitSafetyGuardRail(AuditRecorder auditRecorder) {
+    this.auditRecorder = auditRecorder;
+  }
 
   @Override
   public String getName() {
@@ -36,10 +43,10 @@ public class CommitSafetyGuardRail implements UserInputGuardRail {
   public ValidationResult validate(String content, Blackboard blackboard) {
     var combined = content == null ? "" : content.toLowerCase(Locale.ROOT);
     if (DANGEROUS.matcher(combined).find()) {
-      return invalid("Refusing prompt that requests mutating git commands (read-only demo).");
+      return invalid(null, "Refusing prompt that requests mutating git commands (read-only demo).");
     }
     if (combined.contains("force push") || combined.contains("--force")) {
-      return invalid("Force push is not allowed in this demo.");
+      return invalid(null, "Force push is not allowed in this demo.");
     }
     return ValidationResult.Companion.getVALID();
   }
@@ -49,7 +56,8 @@ public class CommitSafetyGuardRail implements UserInputGuardRail {
     return validate(combineMessages(messages), blackboard);
   }
 
-  private static ValidationResult invalid(String message) {
+  private ValidationResult invalid(String conversationId, String message) {
+    auditRecorder.guardrailBlocked(conversationId, getName(), message);
     return new ValidationResult(
         false,
         List.of(new ValidationError("commit-safety", message, ValidationSeverity.CRITICAL)));

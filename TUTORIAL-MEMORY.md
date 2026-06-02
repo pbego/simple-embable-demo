@@ -13,15 +13,11 @@ For the git commit message agent itself, see [TUTORIAL.md](TUTORIAL.md).
 | **Conversation** | Embabel’s `Conversation` type — explicit message list, not Spring AI `ChatMemory` |
 | **Conversation id** | Short id (filename stem), e.g. `a1b2c3d4` — use with `resume-chat` |
 
-Files are stored under:
+**File profile (default):** JSON under `~/.simple-demo/conversations/<id>.json` (override `simple-demo.conversations-dir` in `application-file.properties`).
 
-```text
-~/.simple-demo/conversations/<id>.json
-```
+**Postgres profile:** rows in `conversations` and `messages` (see [TUTORIAL-AUDIT.md](TUTORIAL-AUDIT.md)). Start with `docker compose up -d` and `-Dspring.profiles.active=postgres`.
 
-Override with `simple-demo.conversations-dir` in `application.properties`.
-
-History **survives** shell `exit` and app restarts. It is **not** shared across machines unless you copy that directory.
+History **survives** shell `exit` and app restarts. It is **not** shared across machines unless you copy files or use a shared database.
 
 ## Message windowing
 
@@ -30,7 +26,7 @@ History **survives** shell `exit` and app restarts. It is **not** shared across 
 - **Saved:** every user and assistant message is written to the JSON file.
 - **Sent to the LLM:** only the last **N** messages from that file, plus a system prompt (default **N = 20** via `simple-demo.memory-max-messages`).
 
-`CommitChatAgent` calls `conversation.last(n)` before `createObject(...)`. That returns a short-lived view of the tail of the thread; replies are still appended to the **full** conversation and persisted. Older messages remain on disk but drop out of the model’s context once the thread is longer than N turns.
+`ChatRouter` uses `ChatContextService` and `ChatPromptBuilder`: a rolling `session_summary` plus `conversation.last(n)` for LLM calls. Replies are still appended to the **full** conversation and persisted. Older messages remain in storage but drop out of the model’s context once the thread is longer than N turns (unless folded into the summary).
 
 This is an application-level **message-count** cap. It is related to, but not the same as, a model’s **token** context window (e.g. 128k): if those N messages are very long, the provider can still reject or truncate the request. Raise N in `application.properties` if you need more recent turns in context, or use summarization/RAG for much older content.
 
@@ -99,43 +95,43 @@ simple-demo.memory-max-messages=20
 | Property | Default | Role |
 |----------|---------|------|
 | `simple-demo.conversations-dir` | `~/.simple-demo/conversations` | Where JSON files are written |
-| `simple-demo.memory-max-messages` | `20` | How many recent messages `CommitChatAgent` sends to the LLM per turn (full history still saved on disk) |
+| `simple-demo.memory-max-messages` | `20` | How many recent messages are included in LLM context per turn (full history still saved) |
 
 ## How it works internally
 
 ```mermaid
 flowchart LR
   chatCmd["chat / resume-chat"]
-  Chatbot["Chatbot bean"]
-  Factory["FileConversationFactory"]
-  Store["FileConversationStore"]
-  Disk["*.json on disk"]
-  Agent["CommitChatAgent"]
+  Chatbot["AgentProcessChatbot"]
+  Factory["ConversationFactory"]
+  Store["ConversationStore"]
+  Router["ChatRouter"]
+  Ctx["ChatContextService"]
 
   chatCmd --> Chatbot
   Chatbot --> Factory
   Factory --> Store
-  Store --> Disk
-  Chatbot --> Agent
-  Agent -->|"SystemMessage + conversation.last(N)"| LLM[Ollama]
+  Chatbot --> Router
+  Router --> Ctx
+  Ctx -->|"summary + last N"| LLM[Ollama]
 ```
 
-1. **`FileConversationFactory`** — `load(id)` reads JSON; `create(id)` wraps an in-memory conversation.
-2. **`PersistingConversation`** — saves to disk after every `addMessage`.
-3. **`CommitChatAgent`** — inline system prompt (no Jinja); sends `SystemMessage` + `conversation.last(memoryMaxMessages)` to the LLM.
-4. **`ChatConfiguration`** — registers `AgentProcessChatbot` wired to the **Commit chat** agent only.
-5. **`AgentProcessChatSession`** — adds user messages to the conversation and runs the agent; assistant replies are appended and persisted.
+1. **`FileConversationFactory`** or **`PostgresConversationFactory`** — `load(id)` / `create(id)` via `ConversationStore`.
+2. **`PersistingConversation`** — saves after every `addMessage`.
+3. **`ChatRouter`** — routes each user turn to specialist `@Agent`s; **`SessionSummaryService`** may update `session_summary`.
+4. **`DemoChatConfiguration`** — registers `AgentProcessChatbot` with utility planning (includes `ChatRouter`).
+5. **`ChatContextService`** — builds prompts with summary + `conversation.last(memoryMaxMessages)`.
 
 ## Embabel guide mapping
 
 - [Building Chatbots (§4.13)](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/) — `Conversation`, `Chatbot`, `conversationId` on `createSession`.
-- Production Embabel apps often use **`embabel-chat-store`** (Neo4j). This demo uses **file JSON** with the same `ConversationFactory.load` / `create` contract.
+- Production Embabel apps may use **`embabel-chat-store`** (Neo4j) with the same `ConversationFactory` contract. This demo uses **PostgreSQL** (`postgres` profile) or **file JSON** (`file` profile).
 
 ## Spring AI comparison
 
 | Spring AI | simple-demo |
 |-----------|-------------|
-| `InMemoryChatMemoryRepository` | JSON files under `~/.simple-demo/conversations` |
+| `InMemoryChatMemoryRepository` | JSON files or PostgreSQL `messages` table |
 | `MessageWindowChatMemory` | Full history on disk; LLM prompt uses last N messages (`memory-max-messages`) |
 | `conversationId` | Conversation id + `resume-chat` |
 
@@ -143,8 +139,8 @@ flowchart LR
 
 | Problem | What to check |
 |---------|----------------|
-| `Agent Commit chat has no goals` | `CommitChatAgent` must use `PlannerType.UTILITY` (adds the synthetic Nirvana goal for open-ended chat) |
-| Chat stuck after you type a message | Same as above — GOAP cannot plan chat turns; use UTILITY on both the `@Agent` and `Chatbot` bean |
+| Chat stuck after you type a message | Ensure `ChatRouter` is deployed as a utility `@EmbabelComponent` and `AgentProcessChatbot.utilityFromPlatform` is used |
+| Postgres connection refused | Run `docker compose up -d`; use `postgres` profile |
 | Empty `conversations` list | Run `chat` at least once; verify `simple-demo.conversations-dir` exists and is writable |
 | `resume-chat` says not found | Typo in id; run `conversations` for exact ids |
 | Corrupt JSON | Delete the broken `*.json` file or fix JSON manually |

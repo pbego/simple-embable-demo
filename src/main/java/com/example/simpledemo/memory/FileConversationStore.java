@@ -1,31 +1,25 @@
 package com.example.simpledemo.memory;
 
-import com.embabel.chat.AssistantMessage;
 import com.embabel.chat.Conversation;
-import com.embabel.chat.Message;
-import com.embabel.chat.MessageRole;
-import com.embabel.chat.SystemMessage;
-import com.embabel.chat.UserMessage;
-import com.embabel.chat.support.InMemoryConversation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Repository;
 
 /**
  * Persists {@link Conversation} instances as JSON files under a configurable directory.
  */
-@Component
-public class FileConversationStore {
+@Repository
+@Profile("file")
+public class FileConversationStore implements ConversationStore {
 
   private final Path conversationsDir;
   private final ObjectMapper objectMapper;
@@ -42,11 +36,17 @@ public class FileConversationStore {
     return conversationsDir;
   }
 
+  @Override
+  public String storageDescription() {
+    return conversationsDir.toString();
+  }
+
+  @Override
   public void save(Conversation conversation) {
     try {
       Files.createDirectories(conversationsDir);
-      var memoryState = memoryState(conversation);
-      var record = toRecord(conversation, memoryState);
+      var memoryState = ConversationMapper.memoryState(conversation);
+      var record = ConversationMapper.toRecord(conversation, memoryState);
       var file = fileForId(conversation.getId());
       objectMapper.writerWithDefaultPrettyPrinter().writeValue(file.toFile(), record);
     } catch (IOException e) {
@@ -54,6 +54,7 @@ public class FileConversationStore {
     }
   }
 
+  @Override
   public Optional<PersistingConversation> load(String id) {
     var file = fileForId(id);
     if (!Files.isRegularFile(file)) {
@@ -61,19 +62,13 @@ public class FileConversationStore {
     }
     try {
       var record = objectMapper.readValue(file.toFile(), ConversationRecord.class);
-      return Optional.of(fromRecord(record));
+      return Optional.of(ConversationMapper.fromRecord(record, this));
     } catch (IOException e) {
       throw new IllegalStateException("Failed to load conversation " + id, e);
     }
   }
 
-  private static ConversationMemoryState memoryState(Conversation conversation) {
-    if (conversation instanceof ConversationMemoryAccessor accessor) {
-      return accessor.memoryState();
-    }
-    return ConversationMemoryState.empty();
-  }
-
+  @Override
   public List<ConversationSummary> list() {
     if (!Files.isDirectory(conversationsDir)) {
       return List.of();
@@ -94,76 +89,13 @@ public class FileConversationStore {
     try {
       var record = objectMapper.readValue(file.toFile(), ConversationRecord.class);
       return Optional.of(
-          new ConversationSummary(record.id(), record.updatedAt(), preview(record)));
+          new ConversationSummary(
+              record.id(),
+              record.updatedAt(),
+              ConversationMapper.previewFromMessages(record.messages(), record.title())));
     } catch (IOException e) {
       return Optional.empty();
     }
-  }
-
-  private static String preview(ConversationRecord record) {
-    return record.messages().stream()
-        .filter(message -> "USER".equals(message.role()))
-        .reduce((first, second) -> second)
-        .map(StoredMessageRecord::content)
-        .map(FileConversationStore::truncate)
-        .orElse(record.title() != null ? record.title() : "(no messages)");
-  }
-
-  private static String truncate(String text) {
-    var singleLine = text.replace('\n', ' ').trim();
-    if (singleLine.length() <= 60) {
-      return singleLine;
-    }
-    return singleLine.substring(0, 57) + "...";
-  }
-
-  private ConversationRecord toRecord(Conversation conversation, ConversationMemoryState memory) {
-    var messages =
-        conversation.getMessages().stream().map(FileConversationStore::toStored).toList();
-    var title =
-        messages.stream()
-            .filter(message -> MessageRole.USER.name().equals(message.role()))
-            .findFirst()
-            .map(StoredMessageRecord::content)
-            .map(FileConversationStore::truncate)
-            .orElse("New conversation");
-    var updatedAt =
-        messages.isEmpty()
-            ? Instant.now()
-            : messages.getLast().timestamp();
-    return new ConversationRecord(
-        conversation.getId(),
-        title,
-        updatedAt,
-        messages,
-        memory.sessionSummary(),
-        memory.summarizedThroughIndex());
-  }
-
-  private static StoredMessageRecord toStored(Message message) {
-    return new StoredMessageRecord(message.getRole().name(), message.getContent(), message.getTimestamp());
-  }
-
-  private PersistingConversation fromRecord(ConversationRecord record) {
-    var messages = new ArrayList<Message>();
-    for (var stored : record.messages()) {
-      messages.add(fromStored(stored));
-    }
-    var conversation = new InMemoryConversation(messages, record.id(), true);
-    var summarizedThrough = record.summarizedThroughIndex();
-    if (record.sessionSummary() == null && summarizedThrough <= 0) {
-      summarizedThrough = ConversationMemoryState.NONE_SUMMARIZED;
-    }
-    var memory = new ConversationMemoryState(record.sessionSummary(), summarizedThrough);
-    return new PersistingConversation(conversation, this, memory);
-  }
-
-  private static Message fromStored(StoredMessageRecord stored) {
-    return switch (MessageRole.valueOf(stored.role())) {
-      case USER -> new UserMessage(stored.content(), null, stored.timestamp());
-      case ASSISTANT -> new AssistantMessage(stored.content(), null, null, List.of(), stored.timestamp());
-      case SYSTEM -> new SystemMessage(stored.content(), stored.timestamp());
-    };
   }
 
   private Path fileForId(String id) {

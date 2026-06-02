@@ -14,6 +14,7 @@ import com.example.simpledemo.agent.CommitStyleAgent;
 import com.example.simpledemo.agent.GreetingAgent;
 import com.example.simpledemo.agent.JokeAgent;
 import com.example.simpledemo.agent.JokeResult;
+import com.example.simpledemo.audit.AuditRecorder;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -51,6 +52,8 @@ public class ChatRouter {
   private final CommitStyleAgent commitStyleAgent;
   private final CommitOrchestratorAgent commitOrchestratorAgent;
   private final SessionSummaryService sessionSummaryService;
+  private final ChatContextService chatContextService;
+  private final AuditRecorder auditRecorder;
 
   public ChatRouter(
       GreetingAgent greetingAgent,
@@ -58,13 +61,17 @@ public class ChatRouter {
       CommitMessageAgent commitMessageAgent,
       CommitStyleAgent commitStyleAgent,
       CommitOrchestratorAgent commitOrchestratorAgent,
-      SessionSummaryService sessionSummaryService) {
+      SessionSummaryService sessionSummaryService,
+      ChatContextService chatContextService,
+      AuditRecorder auditRecorder) {
     this.greetingAgent = greetingAgent;
     this.jokeAgent = jokeAgent;
     this.commitMessageAgent = commitMessageAgent;
     this.commitStyleAgent = commitStyleAgent;
     this.commitOrchestratorAgent = commitOrchestratorAgent;
     this.sessionSummaryService = sessionSummaryService;
+    this.chatContextService = chatContextService;
+    this.auditRecorder = auditRecorder;
   }
 
   @Action(canRerun = true, trigger = UserMessage.class)
@@ -80,17 +87,26 @@ public class ChatRouter {
     var raw = lastUserMessage.getContent();
     var parsed = parseMessage(raw);
     List<RouteTarget> routes;
+    String rationale = "explicit prefix";
     if (parsed.explicitTarget().isPresent()) {
       routes = List.of(parsed.explicitTarget().orElseThrow());
     } else {
-      var decision = routeViaLlm(parsed.question(), context);
+      var decision = routeViaLlm(conversation, parsed.question(), context);
       routes = decision.targets();
-      logger.info("ChatRouter routes={} rationale={}", routes, decision.rationale());
+      rationale = decision.rationale();
+      logger.info("ChatRouter routes={} rationale={}", routes, rationale);
     }
+    auditRecorder.routerDecision(
+        conversation.getId(),
+        routes.stream().map(Enum::name).toList(),
+        rationale,
+        parsed.explicitTarget().isPresent());
+
     var question = parsed.question();
     logger.info("ChatRouter question={}", question);
 
-    var response = dispatchAll(routes, question, context);
+    var contextualQuestion = chatContextService.enrichQuestion(conversation, question);
+    var response = dispatchAll(conversation.getId(), routes, contextualQuestion, context);
     context.sendMessage(conversation.addMessage(new AssistantMessage(response)));
   }
 
@@ -124,31 +140,11 @@ public class ChatRouter {
     };
   }
 
-  private RoutingDecision routeViaLlm(String question, ActionContext context) {
+  private RoutingDecision routeViaLlm(Conversation conversation, String question, ActionContext context) {
     try {
+      var messages = chatContextService.routingMessages(conversation);
       var llmDecision =
-          context
-              .ai()
-              .withDefaultLlm()
-              .withMessage(new UserMessage(question != null ? question : ""))
-              .createObject(
-                  """
-                  You route chat messages to specialist agents.
-
-                  Agents:
-                  - greet: hellos, small talk, unclear/general chat
-                  - joke: humor, jokes, funny requests
-                  - commit: git commit messages, diffs, staged/unstaged changes, conventional commits
-                  - style: commit conventions, style guide, how we format commits (not generating a message)
-
-                  If the user asks for multiple things in one message (e.g. commit message AND a joke),
-                  include every matching agent in targets (e.g. ["commit", "joke"]).
-                  If only one applies, return a one-element targets list.
-
-                  Return JSON: targets (array of greet|joke|commit|style strings), rationale (short string).
-                  Legacy field target (single string) is allowed if targets is omitted.
-                  """,
-                  LlmRoutingDecision.class);
+          context.ai().withDefaultLlm().createObject(messages, LlmRoutingDecision.class);
 
       return toDecision(llmDecision, question);
     } catch (Exception e) {
@@ -266,16 +262,18 @@ public class ChatRouter {
     };
   }
 
-  private String dispatchAll(List<RouteTarget> routes, String question, ActionContext context) {
+  private String dispatchAll(
+      String conversationId, List<RouteTarget> routes, String question, ActionContext context) {
     if (routes == null || routes.isEmpty()) {
+      auditRecorder.agentInvoked(conversationId, RouteTarget.GREETING.name(), question);
       return greetingAgent.greet(new GreetingAgent.Request(question != null ? question : ""));
     }
     if (routes.size() == 1) {
-      return dispatch(routes.getFirst(), question, context);
+      return dispatch(conversationId, routes.getFirst(), question, context);
     }
     var sections = new ArrayList<String>();
     for (var route : routes) {
-      sections.add(sectionLabel(route) + "\n" + dispatch(route, question, context));
+      sections.add(sectionLabel(route) + "\n" + dispatch(conversationId, route, question, context));
     }
     return String.join("\n\n", sections);
   }
@@ -290,8 +288,10 @@ public class ChatRouter {
     };
   }
 
-  private String dispatch(RouteTarget route, String question, ActionContext context) {
+  private String dispatch(
+      String conversationId, RouteTarget route, String question, ActionContext context) {
     var q = question != null ? question : "";
+    auditRecorder.agentInvoked(conversationId, route.name(), q);
     return switch (route) {
       case JOKE -> formatJoke(jokeAgent.tell(new JokeAgent.Request(q), context));
       case COMMIT ->

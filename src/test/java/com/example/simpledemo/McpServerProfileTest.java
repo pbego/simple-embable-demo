@@ -17,7 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
       "spring.main.web-application-type=servlet",
       "server.port=0"
     })
-@ActiveProfiles("mcp-server")
+@ActiveProfiles({"mcp-server", "file"})
 class McpServerProfileTest {
 
   @Test

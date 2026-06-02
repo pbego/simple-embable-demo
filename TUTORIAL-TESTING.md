@@ -23,6 +23,8 @@ Part of **`feat/all_together`** — see [TUTORIAL-INDEX.md](TUTORIAL-INDEX.md).
 | `CommitMessageAgentTest` | Jinja + mocked `PromptRunner.Rendering` |
 | `ChatRouterTest` | `@commit` / `@style` prefixes, LLM routing helpers |
 | `FileConversationStoreTest` | JSON persistence |
+| `ChatContextServiceTest` | Summary + recent turns in enriched questions |
+| `PostgresConversationStoreIT` | Postgres + Flyway (Testcontainers; skipped without Docker) |
 | `CommitStyleRetrieverTest` | RAG (disabled in test props) |
 | `CommitVectorMemoryTest` | Vector store |
 | `GitRepositoryTest` / `GitExecutorReadOnlyTest` | Git tools + read-only mode |
