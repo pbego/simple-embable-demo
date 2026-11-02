@@ -2,7 +2,7 @@
 
 Minimal Embabel examples on **`feat/all_together`**: orchestrator (`x`), chat with router, RAG, vector memory, MCP, REST, and multi-agent commit flows — all in one branch.
 
-See **[TUTORIAL-INDEX.md](TUTORIAL-INDEX.md)** for the full topic list (tutorials 1–29). Guide coverage: **[Embabel](docs/GUIDE_COVERAGE.md)** · **[Spring AI](docs/SPRING_AI_GUIDE_COVERAGE.md)** · **[how they fit together](docs/EMBABEL_AND_SPRING_AI.md)**.
+See **[TUTORIAL-INDEX.md](TUTORIAL-INDEX.md)** for the full topic list (tutorials 1–30). Guide coverage: **[Embabel](docs/GUIDE_COVERAGE.md)** · **[Spring AI](docs/SPRING_AI_GUIDE_COVERAGE.md)** · **[how they fit together](docs/EMBABEL_AND_SPRING_AI.md)**.
 
 ## Prerequisites
 
@@ -14,6 +14,7 @@ See **[TUTORIAL-INDEX.md](TUTORIAL-INDEX.md)** for the full topic list (tutorial
 | Embeddings | `ollama pull nomic-embed-text` (for RAG + vector memory) |
 | Git | Commit-message examples |
 | `npx` | Only for `mcp` profile |
+| Docker | Only for `commit-type`: a decision model, see [TUTORIAL-DECISION-MODEL.md](TUTORIAL-DECISION-MODEL.md) |
 
 ## Quick start (default profile — file-backed chat)
 
@@ -42,6 +43,7 @@ embabel> conversations
 embabel> resume-chat <id>
 embabel> audit-tail <id>          # postgres profile only
 embabel> commit-now "DOC-2: document REST API"
+embabel> commit-type "handle null user in login"   # decision model, no LLM
 ```
 
 ## Shell vs chat
@@ -51,6 +53,7 @@ embabel> commit-now "DOC-2: document REST API"
 | **`x "..."`** | Autonomy picks an `@Agent`; planner runs `@Action` steps |
 | **`chat`** | `ChatRouter` → specialists (`@commit`, `@style`, `@joke`, `@greet`, `@orchestrate`) |
 | **`commit-now`** | `AgentInvocation` without chat (CI-friendly) |
+| **`commit-type "..."`** | A decision model picks one of six commit types; no LLM |
 
 ## Profiles
 
@@ -78,6 +81,7 @@ src/main/java/com/example/simpledemo/
 ├── api/            # REST (api profile)
 ├── chat/           # ChatRouter, summarization
 ├── config/         # RAG, vector memory, MCP, chat, guardrails
+├── decision/       # Decision model client and commit-type classifier
 ├── domain/         # Typed DICE-style records
 ├── git/            # GitExecutor, GitRepository
 ├── invocation/     # CommitInvocationRunner

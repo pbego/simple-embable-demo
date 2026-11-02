@@ -22,6 +22,7 @@ All topics below live on **`feat/all_together`**. Start with [README.md](README.
 | 27 | Eval / regression | [TUTORIAL-EVAL.md](TUTORIAL-EVAL.md) |
 | 28 | DICE / typed context | [TUTORIAL-DICE.md](TUTORIAL-DICE.md) |
 | 29 | Multi-agent orchestration | [TUTORIAL-A2A.md](TUTORIAL-A2A.md) |
+| 30 | Decision model (a fixed choice, no LLM) | [TUTORIAL-DECISION-MODEL.md](TUTORIAL-DECISION-MODEL.md) |
 
 ## Profiles
 
