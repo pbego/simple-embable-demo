@@ -15,6 +15,7 @@ All topics below live on **`feat/all_together`**. Start with [README.md](README.
 | — | Lucene RAG | [TUTORIAL-RAG.md](TUTORIAL-RAG.md) |
 | — | Vector memory | [TUTORIAL-VECTOR-MEMORY.md](TUTORIAL-VECTOR-MEMORY.md) |
 | — | MCP consume & publish | [TUTORIAL-MCP.md](TUTORIAL-MCP.md) |
+| — | Simplest MCP example (two tools, no LLM) | [TUTORIAL-MCP-SIMPLE.md](TUTORIAL-MCP-SIMPLE.md) |
 | 23 | Unit + integration tests | [TUTORIAL-TESTING.md](TUTORIAL-TESTING.md) |
 | 24 | REST + SSE process API | [TUTORIAL-REST.md](TUTORIAL-REST.md) |
 | 25 | Programmatic invocation | [TUTORIAL-INVOCATION.md](TUTORIAL-INVOCATION.md) |
