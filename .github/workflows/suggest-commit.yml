@@ -12,12 +12,14 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: "25"
       - name: Build
         run: ./mvnw -q -DskipTests package
       - name: Suggest commit (mock mode)
         env:
           SPRING_MAIN_WEB_APPLICATION_TYPE: none
+          # Spring Shell 4 only runs the command from the arguments in non-interactive mode
+          EMBABEL_AGENT_SHELL_INTERACTIVE_ENABLED: "false"
           EMBABEL_AGENT_PLATFORM_TEST_MOCK_MODE: "true"
           SIMPLE_DEMO_RAG_ENABLED: "false"
           SIMPLE_DEMO_VECTOR_MEMORY_ENABLED: "false"

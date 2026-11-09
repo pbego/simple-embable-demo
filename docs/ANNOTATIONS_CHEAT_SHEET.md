@@ -1,6 +1,6 @@
 # Spring AI & Embabel annotations cheat sheet
 
-Quick reference for **AI-related annotations** used in Embabel agent apps on Spring Boot. This repo pins **Embabel 0.4.0** (which pulls **Spring AI 1.1.5** transitively). The [Embabel guide 0.5.0-SNAPSHOT](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/) documents additional APIs (called out below).
+Quick reference for **AI-related annotations** used in Embabel agent apps on Spring Boot. This repo pins **Embabel 1.5.4** (which pulls **Spring AI 2.0.1** transitively). The [Embabel guide 0.5.0-SNAPSHOT](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/) documents additional APIs (called out below).
 
 **Related docs in this repo:** [EMBABEL_AND_SPRING_AI.md](EMBABEL_AND_SPRING_AI.md) · [EMBABEL_AGENT_GUIDE_TOPICS.md](EMBABEL_AGENT_GUIDE_TOPICS.md) · [SPRING_AI_REFERENCE_TOPICS.md](SPRING_AI_REFERENCE_TOPICS.md) · [GUIDE_COVERAGE.md](GUIDE_COVERAGE.md)
 
@@ -12,7 +12,7 @@ Quick reference for **AI-related annotations** used in Embabel agent apps on Spr
 |-------|------------|------|
 | **Embabel agent model** | `com.embabel.agent.api.annotation.*` | Agents, GOAP/utility planning, goals, domain tools |
 | **Spring AI tool calling** | `org.springframework.ai.tool.annotation.*` | `@Tool` methods for `ChatClient` / `ChatModel` tool loops |
-| **Spring AI MCP** | `org.springaicommunity.mcp.annotation.*` | Declarative MCP server tools/resources/prompts and client handlers (integrated via `spring-ai-mcp-annotations`) |
+| **Spring AI MCP** | `org.springframework.ai.mcp.annotation.*` | Declarative MCP server tools/resources/prompts and client handlers (integrated via `spring-ai-mcp-annotations`) |
 
 Embabel actions typically use **`@LlmTool`** (or Spring `@Tool`) on domain objects and **`PromptRunner.withToolGroup(...)`** for MCP — not `@Tool` on `@Agent` classes. See [EMBABEL_AND_SPRING_AI.md](EMBABEL_AND_SPRING_AI.md).
 
@@ -51,7 +51,7 @@ Embabel actions typically use **`@LlmTool`** (or Spring `@Tool`) on domain objec
 | `@Tool` | Method | Expose method as LLM tool (`ChatClient.tools(...)`, `ToolCallbacks.from(...)`) |
 | `@ToolParam` | Parameter | Parameter description / required flag for JSON schema |
 
-### Spring AI — MCP (`org.springaicommunity.mcp.annotation`)
+### Spring AI — MCP (`org.springframework.ai.mcp.annotation`)
 
 Documented under [Spring AI MCP annotations](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-annotations-overview.html); types live in the **`mcp-annotations`** artifact (Spring AI 1.1.x).
 
@@ -256,7 +256,7 @@ public String currentBranch() { ... }
 | `@ToolGroup` | `role` | Metadata for tool-group registration |
 | `@AgentCapabilities` | `scan` | Mark capability types for scanning |
 
-### Embabel 0.5+ (not in 0.4.0 JAR)
+### Embabel 0.5+ (not on this repo's classpath)
 
 | Annotation | Purpose |
 |------------|---------|
@@ -294,7 +294,7 @@ Official: [Tool calling](https://docs.spring.io/spring-ai/reference/api/tools.ht
 
 Official: [MCP annotations overview](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-annotations-overview.html) · [Server](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-annotations-server.html) · [Client](https://docs.spring.io/spring-ai/reference/api/mcp/mcp-annotations-client.html)
 
-**Package:** `org.springaicommunity.mcp.annotation` (artifact `org.springaicommunity:mcp-annotations`, pulled transitively by Spring AI MCP starters).
+**Package:** `org.springframework.ai.mcp.annotation` (artifact `org.springframework.ai:spring-ai-mcp-annotations`, pulled transitively by Spring AI MCP starters).
 
 Enable scanning (Boot):
 
@@ -406,9 +406,9 @@ Client handlers **must** set `clients = "connectionName"` matching `spring.ai.mc
 
 | Component | This repo | Cheat sheet source |
 |-----------|-----------|-------------------|
-| Embabel | **0.4.0** | `embabel-agent-api` JAR + [0.5 guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/) for forward-looking items |
-| Spring AI | **1.1.5** (via Embabel BOM) | [Spring AI reference](https://docs.spring.io/spring-ai/reference/index.html) |
-| MCP annotations | **0.8.0** (`mcp-annotations`) | Spring AI MCP docs |
+| Embabel | **1.5.4** | `embabel-agent-api` JAR + [0.5 guide](https://docs.embabel.com/embabel-agent/guide/0.5.0-SNAPSHOT/) for forward-looking items |
+| Spring AI | **2.0.1** (via Embabel BOM) | [Spring AI reference](https://docs.spring.io/spring-ai/reference/index.html) |
+| MCP annotations | **2.0.1** (`spring-ai-mcp-annotations`) | Spring AI MCP docs |
 
 When upgrading Embabel to **0.5.x**, re-scan `com.embabel.agent.api.annotation` for new attributes (`@SecureAgentTool`, expanded `@Action` tool group fields, etc.).
 

@@ -6,11 +6,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
 import org.springframework.context.annotation.Profile;
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
+import org.springframework.shell.core.command.annotation.Argument;
+import org.springframework.shell.core.command.annotation.Command;
+import org.springframework.shell.core.command.annotation.Option;
+import org.springframework.stereotype.Component;
 
-@ShellComponent
+@Component
 @Profile("postgres")
 public class AuditShellCommands {
 
@@ -23,10 +24,10 @@ public class AuditShellCommands {
     this.auditRepository = auditRepository;
   }
 
-  @ShellMethod(value = "Show audit events for a conversation", key = {"audit-tail"})
+  @Command(name = "audit-tail", description = "Show audit events for a conversation")
   public String auditTail(
-      @ShellOption(help = "Conversation id") String conversationId,
-      @ShellOption(defaultValue = "50", help = "Maximum events to show") int limit) {
+      @Argument(index = 0, description = "Conversation id") String conversationId,
+      @Option(longName = "limit", defaultValue = "50", description = "Maximum events to show") int limit) {
     var events = auditRepository.findByConversationId(conversationId, limit);
     if (events.isEmpty()) {
       return "No audit events for conversation '" + conversationId + "'.";

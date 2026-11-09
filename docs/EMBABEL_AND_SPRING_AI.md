@@ -145,7 +145,7 @@ Keep **embedding model tags aligned** when using both stacks (see [TUTORIAL-VECT
 
 ## Version and dependency notes
 
-- **simple-demo** pins **Embabel 0.4.0** via `embabel-agent-dependencies` (which manages compatible **Spring AI** artifacts transitively).
+- **simple-demo** pins **Embabel 1.5.4** via `embabel-agent-dependencies` (which manages compatible **Spring AI** artifacts transitively).
 - You do **not** declare `spring-ai-bom` separately in [pom.xml](../pom.xml); Embabel’s BOM is the source of truth.
 - Optional Spring AI features (e.g. `spring-ai-advisors-vector-store`, cloud model starters) can be added for experiments without replacing Embabel’s agent model.
 

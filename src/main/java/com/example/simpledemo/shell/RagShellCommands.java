@@ -4,11 +4,11 @@ import com.embabel.agent.rag.lucene.LuceneSearchOperations;
 import com.example.simpledemo.rag.CommitCorpusIngester;
 import com.example.simpledemo.rag.CommitStyleRetriever;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
+import org.springframework.shell.core.command.annotation.Command;
+import org.springframework.shell.core.command.annotation.Option;
+import org.springframework.stereotype.Component;
 
-@ShellComponent
+@Component
 @ConditionalOnBean(LuceneSearchOperations.class)
 public class RagShellCommands {
 
@@ -20,18 +20,19 @@ public class RagShellCommands {
     this.retriever = retriever;
   }
 
-  @ShellMethod(value = "Rebuild Lucene index from configured commit-style sources", key = "rag-index")
+  @Command(name = "rag-index", description = "Rebuild Lucene index from configured commit-style sources")
   public String ragIndex() throws Exception {
     ingester.ensureIndexDirectory();
     return ingester.rebuildIndex().format();
   }
 
-  @ShellMethod(value = "Vector search the commit-style index (no LLM)", key = "rag-search")
+  @Command(name = "rag-search", description = "Vector search the commit-style index (no LLM)")
   public String ragSearch(
-      @ShellOption(
-              value = {"-q", "--query"},
+      @Option(
+              longName = "query",
+              shortName = 'q',
               defaultValue = "conventional commits subject line",
-              help = "Search query")
+              description = "Search query")
           String query) {
     return retriever.retrieveForQuery(query);
   }

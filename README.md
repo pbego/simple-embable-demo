@@ -8,7 +8,7 @@ See **[TUTORIAL-INDEX.md](TUTORIAL-INDEX.md)** for the full topic list (tutorial
 
 | Requirement | Notes |
 |-------------|--------|
-| Java 21, Maven | `./mvnw` |
+| Java 25, Maven | `./mvnw` |
 | [Ollama](https://ollama.com/) | `http://localhost:11434` |
 | Chat LLM | `ollama pull gemma4:e4b` |
 | Embeddings | `ollama pull nomic-embed-text` (for RAG + vector memory) |

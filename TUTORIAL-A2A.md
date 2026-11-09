@@ -4,7 +4,7 @@ Part of **`feat/all_together`** — see [TUTORIAL-INDEX.md](TUTORIAL-INDEX.md).
 
 ## In-process pipeline
 
-This branch demonstrates multi-specialist workflows **without** `embabel-agent-a2a` (0.4.0):
+This branch demonstrates multi-specialist workflows **without** `embabel-agent-a2a`:
 
 1. [`SecurityReviewAgent`](src/main/java/com/example/simpledemo/agent/SecurityReviewAgent.java) — scan diffs
 2. [`ChangelogAgent`](src/main/java/com/example/simpledemo/agent/ChangelogAgent.java) — user-facing summary

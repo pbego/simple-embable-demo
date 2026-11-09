@@ -66,7 +66,7 @@ Full stack: [TUTORIAL-RAG.md](TUTORIAL-RAG.md), [TUTORIAL-VECTOR-MEMORY.md](TUTO
 
 | Requirement | Notes |
 |-------------|--------|
-| Java 21 | `pom.xml` |
+| Java 25 | `pom.xml` |
 | Maven | `./mvnw` |
 | Ollama | `http://localhost:11434`, model `gemma4:e4b` |
 | Embeddings | Tier 4: `nomic-embed-text` (exact tag from `ollama list`) |

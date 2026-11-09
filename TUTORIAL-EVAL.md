@@ -14,4 +14,4 @@ Part of **`feat/all_together`** — see [TUTORIAL-INDEX.md](TUTORIAL-INDEX.md).
 
 ## Upgrade path
 
-On Embabel 0.5.x, consider the `embabel-agent-eval` module for richer eval harnesses. This branch keeps a plain JUnit golden suite for 0.4.0.
+For richer eval harnesses, consider the `embabel-agent-eval` module. This branch keeps a plain JUnit golden suite.

@@ -16,7 +16,7 @@ Registered via [`DemoGuardRailConfiguration`](src/main/java/com/example/simplede
 
 ## Production note
 
-Embabel 0.5+ adds `@SecureAgentTool` for MCP/remote tools. This demo uses executor allowlisting + guardrails on 0.4.0.
+Embabel 0.5+ adds `@SecureAgentTool` for MCP/remote tools; it is not on this demo's classpath. This demo uses executor allowlisting + guardrails.
 
 ## Try it
 

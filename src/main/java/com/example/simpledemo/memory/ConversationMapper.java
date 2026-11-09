@@ -79,7 +79,7 @@ final class ConversationMapper {
 
   static Message fromStored(StoredMessageRecord stored) {
     return switch (MessageRole.valueOf(stored.role())) {
-      case USER -> new UserMessage(stored.content(), null, stored.timestamp());
+      case USER -> new UserMessage(stored.content(), null, List.of(), stored.timestamp());
       case ASSISTANT ->
           new AssistantMessage(stored.content(), null, null, List.of(), stored.timestamp());
       case SYSTEM -> new SystemMessage(stored.content(), stored.timestamp());

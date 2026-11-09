@@ -12,7 +12,7 @@ You still use shell **`chat`**; each `UserMessage` triggers `@Action` on `ChatRo
 
 ## Prerequisites
 
-Same as `main` (Ollama `gemma4:e4b`, Java 21).
+Same as `main` (Ollama `gemma4:e4b`, Java 25).
 
 ## Key code
 

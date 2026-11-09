@@ -12,7 +12,7 @@ This matrix maps [SPRING_AI_REFERENCE_TOPICS.md](SPRING_AI_REFERENCE_TOPICS.md) 
 | **Not covered** | Not demonstrated; could be added |
 | **Embabel layer** | Implemented by Embabel APIs/patterns instead of raw Spring AI (still “addressed” for agent apps) |
 
-**Repo:** Embabel **0.4.0** (transitive Spring AI via `embabel-agent-dependencies`), Java **21**, **Ollama-only**. Spring AI is rarely imported in application code except vector memory and MCP types.
+**Repo:** Embabel **1.5.4** (transitive Spring AI 2.0.1 via `embabel-agent-dependencies`), Java **25**, **Ollama-only**. Spring AI is rarely imported in application code except vector memory and MCP types.
 
 ---
 

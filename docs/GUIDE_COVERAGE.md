@@ -11,7 +11,7 @@ This matrix maps [EMBABEL_AGENT_GUIDE_TOPICS.md](EMBABEL_AGENT_GUIDE_TOPICS.md) 
 | **Not covered** | Could be added to this repo |
 | **Out of scope** | Wrong fit, version gap, or belongs upstream / elsewhere |
 
-**Repo:** Embabel **0.4.0**, Java **21**, **Ollama-only** (no cloud API keys). The official guide targets **0.5.0-SNAPSHOT** — see [Version gap](#version-gap).
+**Repo:** Embabel **1.5.4** (Spring Boot 4.1), Java **25**, **Ollama-only** (no cloud API keys). The official guide targets **0.5.0-SNAPSHOT** — see [Version gap](#version-gap).
 
 ---
 
@@ -106,7 +106,7 @@ This matrix maps [EMBABEL_AGENT_GUIDE_TOPICS.md](EMBABEL_AGENT_GUIDE_TOPICS.md) 
 | 4.38 Embabel architecture | Out of scope | Official diagrams |
 | 4.39 Troubleshooting | Partial | Scattered tables in memory/MCP tutorials |
 | 4.40 Migrating from other frameworks | Not covered | — |
-| 4.41 API evolution | Partial | Pinned 0.4.0 vs guide 0.5.0 |
+| 4.41 API evolution | Partial | Pinned 1.5.4 vs guide 0.5.0 |
 
 **Also covered (tutorial index, not a separate guide section):**
 
@@ -122,7 +122,7 @@ This matrix maps [EMBABEL_AGENT_GUIDE_TOPICS.md](EMBABEL_AGENT_GUIDE_TOPICS.md) 
 
 | Topic | Status | Where in simple-demo |
 |-------|--------|----------------------|
-| 5. Async / Java 25 | Out of scope | Project uses **Java 21** |
+| 5. Async / Java 25 | Not covered | Project runs on **Java 25**; no async examples yet |
 | 5.1 Java 25 implications | Out of scope | — |
 
 ---
@@ -153,10 +153,10 @@ This matrix maps [EMBABEL_AGENT_GUIDE_TOPICS.md](EMBABEL_AGENT_GUIDE_TOPICS.md) 
 
 | | Official guide | simple-demo |
 |---|----------------|-------------|
-| Version | **0.5.0-SNAPSHOT** | **0.4.0** (`pom.xml`) |
-| Blocked topics until upgrade | `@SecureAgentTool`, Agent Skills, fuller guardrail/MCP security docs, expanded DICE in guide | [TUTORIAL-SECURE-TOOLS.md](../TUTORIAL-SECURE-TOOLS.md) notes 0.5 APIs |
+| Version | **0.5.0-SNAPSHOT** | **1.5.4** (`pom.xml`) |
+| Topics not yet shown in code | `@SecureAgentTool`, Agent Skills, fuller guardrail/MCP security docs, expanded DICE in guide | [TUTORIAL-SECURE-TOOLS.md](../TUTORIAL-SECURE-TOOLS.md) notes 0.5 APIs |
 
-Bumping `embabel-agent.version` to **0.5.x** is the main unlock for guide topics that are already named in tutorials but not fully demonstrable in code.
+The repo is now on **1.5.4**, newer than the guide. Topics named in tutorials but not yet shown in code still need examples.
 
 ---
 

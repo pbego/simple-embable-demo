@@ -3,16 +3,16 @@ package com.example.simpledemo.shell;
 import com.embabel.agent.core.AgentPlatform;
 import com.embabel.agent.shell.TerminalServices;
 import com.embabel.agent.spi.logging.ColorPalette;
-import com.embabel.chat.Chatbot;
 import com.embabel.chat.ChatSession;
+import com.embabel.chat.Chatbot;
 import com.example.simpledemo.memory.ConversationStore;
 import com.example.simpledemo.memory.ConversationSummary;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
+import org.springframework.shell.core.command.annotation.Argument;
+import org.springframework.shell.core.command.annotation.Command;
+import org.springframework.stereotype.Component;
 
 /**
  * Shell commands for listing and resuming persisted conversations.
@@ -20,7 +20,7 @@ import org.springframework.shell.standard.ShellOption;
  * <p>The built-in Embabel {@code chat} command starts a new session (using the injected
  * {@link Chatbot} bean). Use {@code chat --resume <id>} here to continue a saved conversation.
  */
-@ShellComponent
+@Component
 public class ConversationShellCommands {
 
   private static final DateTimeFormatter UPDATED_FORMAT =
@@ -45,7 +45,10 @@ public class ConversationShellCommands {
     this.colorPalette = colorPalette;
   }
 
-  @ShellMethod(key = {"conversations", "conv-list"}, value = "List saved chat conversations")
+  @Command(
+      name = "conversations",
+      alias = "conv-list",
+      description = "List saved chat conversations")
   public String conversations() {
     var summaries = store.list();
     if (summaries.isEmpty()) {
@@ -59,11 +62,13 @@ public class ConversationShellCommands {
     return header + "\n" + rows + "\n\nStorage: " + store.storageDescription();
   }
 
-  @ShellMethod(
-      value = "Resume a saved chat conversation (use 'chat' to start a new one)",
-      key = {"chat-resume", "resume-chat"})
+  @Command(
+      name = "resume-chat",
+      alias = "chat-resume",
+      description = "Resume a saved chat conversation (use 'chat' to start a new one)")
   public String resumeChat(
-      @ShellOption(help = "Conversation id from 'conversations'") String conversationId) {
+      @Argument(index = 0, description = "Conversation id from 'conversations'")
+          String conversationId) {
     if (store.load(conversationId).isEmpty()) {
       return "No conversation found with id '" + conversationId + "'. Run 'conversations' to list saved ids.";
     }

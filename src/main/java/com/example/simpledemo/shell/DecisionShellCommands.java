@@ -1,10 +1,11 @@
 package com.example.simpledemo.shell;
 
 import com.example.simpledemo.decision.CommitTypeClassifier;
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
+import org.springframework.shell.core.command.annotation.Argument;
+import org.springframework.shell.core.command.annotation.Command;
+import org.springframework.stereotype.Component;
 
-@ShellComponent
+@Component
 public class DecisionShellCommands {
 
   private final CommitTypeClassifier classifier;
@@ -13,10 +14,11 @@ public class DecisionShellCommands {
     this.classifier = classifier;
   }
 
-  @ShellMethod(
-      key = "commit-type",
-      value = "Pick the Conventional Commits type of a change with the decision model (no LLM)")
-  public String commitType(String change) {
+  @Command(
+      name = "commit-type",
+      description = "Pick the Conventional Commits type of a change with the decision model (no LLM)")
+  public String commitType(
+      @Argument(index = 0, description = "The change to classify, in plain words") String change) {
     return classifier.classify(change).formatted();
   }
 }

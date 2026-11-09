@@ -186,7 +186,7 @@ embabel> chat
 chat:> how do we format commits here?
 ```
 
-`rag-search` is useful to debug retrieval without spending LLM tokens. Commands use Spring Shell’s `@ShellMethod` API (same as Embabel’s built-in `x`, `chat`, `agents`).
+`rag-search` is useful to debug retrieval without spending LLM tokens. Commands use Spring Shell’s `@Command` API (same as Embabel’s built-in `x`, `chat`, `agents`).
 
 ## Key code
 
