@@ -2,6 +2,8 @@
 
 Branch **`feat/tier4-mcp`**. Testing steps are in [README.md](README.md#testing-this-branch-feattier4-mcp).
 
+**New to MCP?** Start with [TUTORIAL-MCP-SIMPLE.md](TUTORIAL-MCP-SIMPLE.md): two tools, no LLM, one test.
+
 This branch includes **everything** from [TUTORIAL-RAG.md](TUTORIAL-RAG.md) and [TUTORIAL-VECTOR-MEMORY.md](TUTORIAL-VECTOR-MEMORY.md), plus **Model Context Protocol (MCP)** integration.
 
 ## What is MCP?
